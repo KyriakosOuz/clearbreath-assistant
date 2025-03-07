@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Locate } from 'lucide-react';
+import { MapPin, Locate, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AirQualityMapProps {
