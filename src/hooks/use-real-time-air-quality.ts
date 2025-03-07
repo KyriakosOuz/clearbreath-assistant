@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 // Types for air quality data
 interface Pollutant {
@@ -23,6 +24,10 @@ export interface AirQualityData {
   };
   category: 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe';
   mainPollutant?: string;
+  attribution?: Array<{
+    name: string;
+    url: string;
+  }>;
 }
 
 // Helper to determine AQI category
@@ -75,14 +80,20 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
         const lat = latitude || 40.6401;
         const lon = longitude || 22.9444;
         
+        console.log(`Fetching air quality data for: ${lat}, ${lon}`);
+        
         // Call the Supabase Edge Function
         const { data: waqi, error: waqiError } = await supabase.functions.invoke('waqi-air-quality', {
           body: { lat, lon }
         });
         
-        if (waqiError) throw new Error(waqiError.message);
+        if (waqiError) {
+          console.error('WAQI Edge Function error:', waqiError);
+          throw new Error(waqiError.message);
+        }
         
         if (!waqi || !waqi.data) {
+          console.error('No air quality data returned from WAQI');
           throw new Error('No air quality data returned');
         }
         
@@ -100,10 +111,23 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
             'CO': waqi.data.iaqi?.co?.v
           },
           category: getAqiCategory(waqi.data.aqi),
-          mainPollutant: waqi.data.dominentpol
+          mainPollutant: waqi.data.dominentpol,
+          attribution: waqi.data.attributions?.map((attr: any) => ({
+            name: attr.name,
+            url: attr.url
+          }))
         };
         
+        console.log('Successfully processed air quality data:', aqiData);
         setData(aqiData);
+        
+        // Show toast for unhealthy air quality
+        if (aqiData.category === 'unhealthy' || aqiData.category === 'hazardous' || aqiData.category === 'severe') {
+          toast.warning(`Air quality alert for ${aqiData.location}`, {
+            description: `AQI is at ${aqiData.aqi} (${aqiData.category}). Consider limiting outdoor activities.`,
+            duration: 6000,
+          });
+        }
       } catch (err) {
         console.error('Error fetching air quality data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch air quality data');
@@ -120,6 +144,12 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
             'NO2': 15
           },
           category: 'good'
+        });
+        
+        // Show error toast
+        toast.error('Error fetching air quality data', {
+          description: err instanceof Error ? err.message : 'Please try again later',
+          duration: 5000,
         });
       } finally {
         setIsLoading(false);

@@ -29,20 +29,22 @@ const AppContent = () => {
   return (
     <div className={cn(
       "relative min-h-screen transition-all duration-300",
-      collapsed ? "pl-[70px]" : "pl-60"
+      collapsed ? "pl-[70px] md:pl-[80px]" : "pl-0 md:pl-64"
     )}>
       <Navigation />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/air-quality" element={<AirQuality />} />
-        <Route path="/map" element={<Map />} />
-        <Route path="/clean-route" element={<CleanRoute />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/sign-in/*" element={<SignIn />} />
-        <Route path="/sign-up/*" element={<SignUp />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <main className="w-full p-4">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/air-quality" element={<AirQuality />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/clean-route" element={<CleanRoute />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/sign-in/*" element={<SignIn />} />
+          <Route path="/sign-up/*" element={<SignUp />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
     </div>
   );
 };
