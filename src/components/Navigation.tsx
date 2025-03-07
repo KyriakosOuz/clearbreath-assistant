@@ -24,7 +24,7 @@ import { useUser } from '@clerk/clerk-react';
 const Navigation = () => {
   const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
 
   const toggleSettings = () => {
     setIsSettingsOpen((prev) => !prev);
@@ -81,10 +81,16 @@ const Navigation = () => {
         ) : (
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.imageUrl} />
-              <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
+              {isLoaded && user ? (
+                <>
+                  <AvatarImage src={user.imageUrl} />
+                  <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+                </>
+              ) : (
+                <AvatarFallback>GU</AvatarFallback>
+              )}
             </Avatar>
-            <span className="font-bold">{user?.firstName}</span>
+            <span className="font-bold">{isLoaded && user ? user.firstName : "Guest"}</span>
             <Button variant="ghost" size="icon" onClick={onCollapse}>
               <Settings className="h-5 w-5" />
             </Button>
