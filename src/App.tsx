@@ -1,53 +1,39 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { Home, BarChart, MapPin, MessageSquare, Navigation, Wind } from 'lucide-react';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Map from "./pages/Map";
-import CleanRoute from "./pages/CleanRoute";
-import Chat from "./pages/Chat";
-import NotFound from "./pages/NotFound";
-import Navigation from "./components/Navigation";
+import { useTheme } from '@/hooks/use-theme';
+import { Navigation as NavigationComponent } from '@/components/Navigation';
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import Map from '@/pages/Map';
+import Chat from '@/pages/Chat';
+import CleanRoute from '@/pages/CleanRoute';
+import NotFound from '@/pages/NotFound';
+import './index.css';
+import AirQualityPage from './pages/AirQuality';
 
-const queryClient = new QueryClient();
+const App: React.FC = () => {
+  const { theme } = useTheme();
 
-// Wrapper for AnimatePresence
-const AnimatedRoutes = () => {
-  const location = useLocation();
-  
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Index />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/map" element={<Map />} />
-        <Route path="/clean-route" element={<CleanRoute />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
+    <div className="app-container">
+      <NavigationComponent />
+      <main className="app-content">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/clean-route" element={<CleanRoute />} />
+          <Route path="/air-quality" element={<AirQualityPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Toaster />
+    </div>
   );
 };
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="flex min-h-screen flex-col">
-          <Navigation />
-          <main className="flex-1">
-            <AnimatedRoutes />
-          </main>
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
 
 export default App;

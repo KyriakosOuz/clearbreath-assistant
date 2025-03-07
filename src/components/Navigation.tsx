@@ -1,80 +1,112 @@
-
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { 
+  Home, 
+  BarChart, 
+  MapPin, 
+  MessageSquare, 
+  Settings, 
+  Navigation,
+  Wind
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Wind, BarChart2, Map, Navigation as NavigationIcon, MessageSquare } from 'lucide-react';
+import { useSidebar } from '@/hooks/use-sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from '@/components/ui/button';
+import { useUser } from '@clerk/clerk-react';
 
 const Navigation = () => {
-  const location = useLocation();
-  
+  const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { user } = useUser();
+
+  const toggleSettings = () => {
+    setIsSettingsOpen((prev) => !prev);
+  };
+
   const links = [
-    { to: '/', label: 'Home', icon: Wind },
-    { to: '/dashboard', label: 'Dashboard', icon: BarChart2 },
-    { to: '/map', label: 'Air Quality Map', icon: Map },
-    { to: '/clean-route', label: 'Clean Routes', icon: NavigationIcon },
-    { to: '/chat', label: 'AI Assistant', icon: MessageSquare }
+    {
+      href: '/',
+      label: 'Home',
+      icon: Home,
+    },
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: BarChart,
+    },
+    {
+      href: '/map',
+      label: 'Map',
+      icon: MapPin,
+    },
+    {
+      href: '/air-quality',
+      label: 'Air Quality',
+      icon: Wind,
+    },
+    {
+      href: '/clean-route',
+      label: 'Clean Route',
+      icon: Navigation,
+    },
+    {
+      href: '/chat',
+      label: 'Chat',
+      icon: MessageSquare,
+    },
   ];
-  
+
   return (
-    <header className="sticky top-0 z-10 w-full bg-background/80 backdrop-blur-sm border-b">
-      <div className="container flex h-16 items-center px-4">
-        <div className="flex gap-2 font-semibold text-xl items-center mr-4">
-          <Wind className="h-5 w-5 text-primary" />
-          <span>AetherIQ</span>
-        </div>
-        
-        <nav className="hidden md:flex flex-1 items-center gap-6 text-sm">
-          {links.map(({ to, label, icon: Icon }) => {
-            const isActive = to === '/' 
-              ? location.pathname === to 
-              : location.pathname.startsWith(to);
-              
-            return (
-              <Link 
-                key={to} 
-                to={to}
-                className={cn(
-                  "group flex items-center gap-2 transition-colors hover:text-foreground/80",
-                  isActive ? "text-foreground" : "text-foreground/60"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="navbar-indicator"
-                    className="absolute bottom-0 h-1 w-[calc(100%-1rem)] bg-primary"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        
-        <div className="md:hidden ml-auto">
-          <button className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-            <span className="sr-only">Toggle menu</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
+    <motion.div
+      className={cn(
+        "fixed left-0 top-0 z-50 flex h-full w-60 flex-col border-r bg-secondary",
+        collapsed ? "w-[70px]" : "w-60"
+      )}
+      initial={{ x: -240 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      <div className="flex items-center justify-center p-4">
+        {collapsed ? (
+          <Button variant="ghost" size="icon" onClick={onExpand}>
+            <Settings className="h-5 w-5" />
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.imageUrl} />
+              <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <span className="font-bold">{user?.firstName}</span>
+            <Button variant="ghost" size="icon" onClick={onCollapse}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
       </div>
-    </header>
+      
+      <ScrollArea className="flex-1 space-y-4 p-4">
+        <div className="space-y-1">
+          {links.map((link) => (
+            <motion.a
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "group flex items-center space-x-3 rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                collapsed ? "justify-center" : "justify-start"
+              )}
+              whileHover={{ scale: 1.1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <link.icon className="h-4 w-4" />
+              {!collapsed && <span>{link.label}</span>}
+            </motion.a>
+          ))}
+        </div>
+      </ScrollArea>
+    </motion.div>
   );
 };
 
