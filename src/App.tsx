@@ -8,6 +8,7 @@ import { AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Map from "./pages/Map";
+import CleanRoute from "./pages/CleanRoute";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 
@@ -23,6 +24,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/map" element={<Map />} />
+        <Route path="/clean-route" element={<CleanRoute />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
