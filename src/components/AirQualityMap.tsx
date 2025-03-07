@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Locate, X, BarChart3, Calendar, Loader2 } from 'lucide-react';
@@ -210,11 +209,8 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
         const highPollutionPeriods = generatedForecast.filter(point => point.aqi > 70 && point.isPrediction);
         
         if (highPollutionPeriods.length > 0) {
-          toast({
-            title: "Pollution Alert",
-            description: `High pollution levels predicted at ${highPollutionPeriods[0].hour}. Consider staying indoors.`,
-            variant: "destructive",
-          });
+          // Fix: Use toast directly instead of passing an object with title property
+          toast.error(`High pollution levels predicted at ${highPollutionPeriods[0].hour}. Consider staying indoors.`);
         }
       }, 2000);
     } catch (error) {
