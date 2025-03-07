@@ -1,38 +1,56 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, ArrowRight } from 'lucide-react';
+import { Bell, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useUser } from '@clerk/clerk-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import AirQualityCard from '@/components/AirQualityCard';
 import AQIScale from '@/components/AQIScale';
 import HealthRecommendation from '@/components/HealthRecommendation';
 import { Button } from '@/components/ui/button';
-
-// Mock data for current location
-const mockCurrentLocation = {
-  aqi: 42,
-  location: 'Thessaloniki, City Center',
-  updatedAt: '2 minutes ago',
-  pollutants: {
-    'PM2.5': 12,
-    'PM10': 24,
-    'O3': 68,
-    'NO2': 15
-  }
-};
+import { useRealTimeAirQuality } from '@/hooks/use-real-time-air-quality';
 
 const Index = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const { user, isLoaded } = useUser();
   
-  // Simulate data fetching
+  // Try to get user's location
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Error getting location:', error);
+        }
+      );
+    }
   }, []);
+  
+  // Fetch real-time air quality data using our custom hook
+  const { data: airQualityData, isLoading, error } = useRealTimeAirQuality(
+    userLocation?.lat,
+    userLocation?.lon
+  );
+  
+  // Show error toast if data fetch fails
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to fetch air quality data', {
+        description: error,
+        action: {
+          label: 'Retry',
+          onClick: () => window.location.reload()
+        }
+      });
+    }
+  }, [error]);
   
   return (
     <AnimatedBackground intensity="light">
@@ -77,7 +95,9 @@ const Index = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mb-6 text-center text-2xl font-bold"
             >
-              Current Air Quality
+              {isLoaded && user 
+                ? `Current Air Quality for ${user.firstName || 'You'}`
+                : 'Current Air Quality'}
             </motion.h2>
             
             <div className="grid gap-6 md:grid-cols-2">
@@ -89,15 +109,26 @@ const Index = () => {
               ) : (
                 <>
                   <AirQualityCard 
-                    aqi={mockCurrentLocation.aqi}
-                    location={mockCurrentLocation.location}
-                    updatedAt={mockCurrentLocation.updatedAt}
-                    pollutants={mockCurrentLocation.pollutants}
+                    aqi={airQualityData?.aqi || 0}
+                    location={airQualityData?.location || 'Unknown Location'}
+                    updatedAt={airQualityData?.updatedAt || 'Unknown'}
+                    pollutants={airQualityData?.pollutants || {}}
                   />
-                  <HealthRecommendation aqiLevel="good" />
+                  <HealthRecommendation aqiLevel={airQualityData?.category || 'good'} />
                 </>
               )}
             </div>
+            
+            {userLocation && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="mt-4 text-center text-sm text-muted-foreground"
+              >
+                <p>Showing data for your current location</p>
+              </motion.div>
+            )}
             
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -125,7 +156,7 @@ const Index = () => {
               {[
                 {
                   title: 'Real-time Monitoring',
-                  description: 'Get up-to-date air quality data from multiple stations across Thessaloniki.',
+                  description: 'Get up-to-date air quality data from multiple stations across your area.',
                   delay: 0.7
                 },
                 {

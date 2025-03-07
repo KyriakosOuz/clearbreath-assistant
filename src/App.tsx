@@ -15,12 +15,37 @@ import { cn } from '@/lib/utils';
 import CleanRoute from '@/pages/CleanRoute';
 import SignIn from '@/pages/SignIn';
 import SignUp from '@/pages/SignUp';
+import { useSidebar } from '@/hooks/use-sidebar';
 
 // Set the Clerk publishable key
 const clerkPubKey = "pk_test_ZmVhc2libGUtbWFybW90LTg4LmNsZXJrLmFjY291bnRzLmRldiQ";
 
 // Check if it's a valid publishable key format (starts with pk_)
 const isValidKey = typeof clerkPubKey === 'string' && clerkPubKey.startsWith('pk_');
+
+const AppContent = () => {
+  const { collapsed } = useSidebar();
+  
+  return (
+    <div className={cn(
+      "relative min-h-screen transition-all duration-300",
+      collapsed ? "pl-[70px]" : "pl-60"
+    )}>
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/air-quality" element={<AirQuality />} />
+        <Route path="/map" element={<Map />} />
+        <Route path="/clean-route" element={<CleanRoute />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/sign-in/*" element={<SignIn />} />
+        <Route path="/sign-up/*" element={<SignUp />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+};
 
 const App = () => {
   const [authError, setAuthError] = useState(false);
@@ -37,18 +62,7 @@ const App = () => {
   if (!isValidKey || authError) {
     return (
       <BrowserRouter>
-        <div className={cn("relative min-h-screen")}>
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/air-quality" element={<AirQuality />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/clean-route" element={<CleanRoute />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
+        <AppContent />
         <Toaster />
       </BrowserRouter>
     );
@@ -70,20 +84,7 @@ const App = () => {
       }}
     >
       <BrowserRouter>
-        <div className={cn("relative min-h-screen")}>
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/air-quality" element={<AirQuality />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/clean-route" element={<CleanRoute />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/sign-in/*" element={<SignIn />} />
-            <Route path="/sign-up/*" element={<SignUp />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
+        <AppContent />
         <Toaster />
       </BrowserRouter>
     </ClerkProvider>
