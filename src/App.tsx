@@ -62,6 +62,10 @@ const App = () => {
         elements: {
           formButtonPrimary: 'bg-primary hover:bg-primary/90 text-primary-foreground',
           card: 'bg-background shadow-lg',
+          socialButtonsIconButton: 'border border-gray-300 hover:bg-gray-100',
+          socialButtonsBlockButton: 'border border-gray-300 hover:bg-gray-100',
+          footerActionLink: 'text-primary font-medium hover:text-primary/80',
+          identityPreview: 'bg-gray-50 border border-gray-200',
         }
       }}
     >
@@ -75,8 +79,8 @@ const App = () => {
             <Route path="/map" element={<Map />} />
             <Route path="/clean-route" element={<CleanRoute />} />
             <Route path="/chat" element={<Chat />} />
-            <Route path="/sign-in" element={<SignIn />} />
-            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/sign-in/*" element={<SignIn />} />
+            <Route path="/sign-up/*" element={<SignUp />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
