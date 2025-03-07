@@ -12,32 +12,50 @@ import {
   LayoutDashboard,
   CloudSun,
   MapPin as MapPinIcon,
-  MessageSquare as MessageSquareIcon
+  MessageSquare as MessageSquareIcon,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from '@/components/ui/button';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useClerk } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
   const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const navigate = useNavigate();
   
-  // Safely attempt to use Clerk's useUser hook
+  // Safely attempt to use Clerk's hooks
   let user = null;
   let isLoaded = false;
+  let clerk = null;
+  
   try {
     const userResult = useUser();
     user = userResult.user;
     isLoaded = userResult.isLoaded;
+    clerk = useClerk().clerk;
   } catch (error) {
     console.log('Clerk authentication not available');
   }
 
   const toggleSettings = () => {
     setIsSettingsOpen((prev) => !prev);
+  };
+
+  const handleSignOut = async () => {
+    if (clerk) {
+      await clerk.signOut();
+      navigate('/');
+    }
+  };
+
+  const handleSignIn = () => {
+    navigate('/sign-in');
   };
 
   const routes = [
@@ -127,6 +145,28 @@ const Navigation = () => {
           ))}
         </div>
       </ScrollArea>
+      
+      <div className="p-4">
+        {!collapsed && isLoaded && (
+          <Button 
+            variant="outline" 
+            className="w-full flex justify-start items-center space-x-2"
+            onClick={user ? handleSignOut : handleSignIn}
+          >
+            {user ? (
+              <>
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </>
+            )}
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 };

@@ -13,9 +13,11 @@ import NotFound from '@/pages/NotFound';
 import Navigation from '@/components/Navigation';
 import { cn } from '@/lib/utils';
 import CleanRoute from '@/pages/CleanRoute';
+import SignIn from '@/pages/SignIn';
+import SignUp from '@/pages/SignUp';
 
-// Get the Clerk publishable key from environment variables
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// Set the Clerk publishable key
+const clerkPubKey = "pk_test_ZmVhc2libGUtbWFybW90LTg4LmNsZXJrLmFjY291bnRzLmRldiQ";
 
 // Check if it's a valid publishable key format (starts with pk_)
 const isValidKey = typeof clerkPubKey === 'string' && clerkPubKey.startsWith('pk_');
@@ -73,6 +75,8 @@ const App = () => {
             <Route path="/map" element={<Map />} />
             <Route path="/clean-route" element={<CleanRoute />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

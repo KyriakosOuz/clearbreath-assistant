@@ -1,357 +1,288 @@
-
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useAuthProtect } from '@/hooks/use-auth-protect';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, BarChart2, Bell, User, Heart, Activity } from 'lucide-react';
-import AnimatedBackground from '@/components/AnimatedBackground';
-import AirQualityCard from '@/components/AirQualityCard';
-import HealthRecommendation from '@/components/HealthRecommendation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAirQuality } from '@/hooks/use-air-quality';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { ArrowUpRight, ArrowDownRight, Activity, Users, Wind, Droplets, MapPin, Calendar } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useUser } from '@clerk/clerk-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data for air quality
-const mockAirQuality = {
-  forecast: [
-    { time: '12:00', aqi: 45 },
-    { time: '14:00', aqi: 52 },
-    { time: '16:00', aqi: 62 },
-    { time: '18:00', aqi: 58 },
-    { time: '20:00', aqi: 49 },
-    { time: '22:00', aqi: 42 }
-  ],
-  nearby: [
-    { location: 'Eastern District', aqi: 72, distance: '3.2 km' },
-    { location: 'Harbor Area', aqi: 105, distance: '2.8 km' },
-    { location: 'Western Suburbs', aqi: 38, distance: '4.5 km' }
-  ]
-};
+// Sample data for charts
+const airQualityData = [
+  { time: '00:00', aqi: 42 },
+  { time: '04:00', aqi: 38 },
+  { time: '08:00', aqi: 45 },
+  { time: '12:00', aqi: 65 },
+  { time: '16:00', aqi: 58 },
+  { time: '20:00', aqi: 52 },
+  { time: '24:00', aqi: 48 },
+];
 
-// Health recommendations from AI
-const mockAIRecommendations = [
-  "Based on current air quality and your health metrics, it's a good day for light outdoor activities.",
-  "Your heart rate has been optimal today. Continue your current activity level.",
-  "Remember to stay hydrated to help your body naturally remove inhaled particles."
+const weeklyData = [
+  { day: 'Mon', aqi: 45, exposure: 35 },
+  { day: 'Tue', aqi: 52, exposure: 40 },
+  { day: 'Wed', aqi: 49, exposure: 38 },
+  { day: 'Thu', aqi: 63, exposure: 55 },
+  { day: 'Fri', aqi: 58, exposure: 50 },
+  { day: 'Sat', aqi: 40, exposure: 30 },
+  { day: 'Sun', aqi: 42, exposure: 32 },
+];
+
+const pollutantData = [
+  { name: 'PM2.5', value: 18, limit: 35, unit: 'μg/m³' },
+  { name: 'PM10', value: 42, limit: 50, unit: 'μg/m³' },
+  { name: 'O3', value: 68, limit: 100, unit: 'ppb' },
+  { name: 'NO2', value: 15, limit: 53, unit: 'ppb' },
+  { name: 'SO2', value: 3, limit: 75, unit: 'ppb' },
+  { name: 'CO', value: 0.8, limit: 9, unit: 'ppm' },
+];
+
+const locationData = [
+  { name: 'Home', aqi: 42, trend: 'down' },
+  { name: 'Work', aqi: 58, trend: 'up' },
+  { name: 'Gym', aqi: 45, trend: 'down' },
+  { name: 'Park', aqi: 38, trend: 'down' },
 ];
 
 const Dashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const { data: airQualityData } = useAirQuality();
+  // Protect this route - only authenticated users can access
+  const { isLoaded, isSignedIn } = useAuthProtect();
+  const { user } = useUser();
+  const { toast } = useToast();
   
-  // Determine AQI level from AQI value
-  const getAQILevel = (aqi: number) => {
-    if (aqi <= 50) return 'good';
-    if (aqi <= 100) return 'moderate';
-    if (aqi <= 150) return 'unhealthy';
-    if (aqi <= 300) return 'hazardous';
-    return 'severe';
-  };
-  
-  // Simulate data fetching
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Get air quality data
-  const aqi = airQualityData?.aqi || 42;
-  const location = airQualityData?.city || 'Thessaloniki, City Center';
-  const updatedAt = airQualityData?.time ? new Date(airQualityData.time).toLocaleTimeString() : '3 minutes ago';
-  const pollutants = airQualityData?.pollutants || {
-    'PM2.5': 12,
-    'PM10': 24,
-    'O3': 68,
-    'NO2': 15
-  };
-  
-  return (
-    <AnimatedBackground intensity="light">
-      <div className="page-container">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="page-heading">Dashboard</h1>
-        </motion.div>
-        
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {isLoading ? (
-              <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
-            ) : (
-              <AirQualityCard 
-                aqi={aqi}
-                location={location}
-                updatedAt={updatedAt}
-                pollutants={pollutants}
-              />
-            )}
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            {isLoading ? (
-              <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
-            ) : (
-              <HealthRecommendation 
-                aqiLevel={getAQILevel(aqi) as 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe'} 
-                pollutants={pollutants}
-              />
-            )}
-          </motion.div>
-        </div>
-        
-        <div className="mb-8">
-          <Tabs defaultValue="forecast" className="w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="forecast" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Forecast</span>
-                </TabsTrigger>
-                <TabsTrigger value="nearby" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Nearby Locations</span>
-                </TabsTrigger>
-                <TabsTrigger value="health" className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  <span>Health Trends</span>
-                </TabsTrigger>
-              </TabsList>
-            </motion.div>
-            
-            <TabsContent value="forecast">
-              {isLoading ? (
-                <div className="h-[200px] rounded-xl bg-muted/20 animate-pulse" />
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="rounded-xl bg-white p-4 shadow-md"
-                >
-                  <h3 className="mb-4 text-lg font-medium">Today's Forecast</h3>
-                  <div className="flex justify-between">
-                    {mockAirQuality.forecast.map((item, index) => (
-                      <motion.div
-                        key={item.time}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-                        className="flex flex-col items-center"
-                      >
-                        <span className="text-sm text-muted-foreground">{item.time}</span>
-                        <div 
-                          className={`mt-2 flex h-12 w-12 items-center justify-center rounded-full ${
-                            item.aqi <= 50 ? 'bg-aqi-good' : 
-                            item.aqi <= 100 ? 'bg-aqi-moderate' : 
-                            'bg-aqi-unhealthy'
-                          }`}
-                        >
-                          <span className="text-sm font-medium text-white">{item.aqi}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="nearby">
-              {isLoading ? (
-                <div className="h-[200px] rounded-xl bg-muted/20 animate-pulse" />
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="rounded-xl bg-white p-4 shadow-md"
-                >
-                  <h3 className="mb-4 text-lg font-medium">Nearby Locations</h3>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {mockAirQuality.nearby.map((item, index) => (
-                      <motion.div
-                        key={item.location}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-                        className="rounded-lg bg-muted/20 p-4"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="font-medium">{item.location}</span>
-                          <span 
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${
-                              item.aqi <= 50 ? 'bg-green-100 text-green-800' : 
-                              item.aqi <= 100 ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-orange-100 text-orange-800'
-                            }`}
-                          >
-                            {item.aqi}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          <MapPin className="mr-1 inline h-3 w-3" />
-                          {item.distance} away
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="health">
-              {isLoading ? (
-                <div className="h-[200px] rounded-xl bg-muted/20 animate-pulse" />
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="rounded-xl bg-white p-4 shadow-md"
-                >
-                  <h3 className="mb-4 text-lg font-medium">Your Health Trends</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Heart className="mr-2 h-4 w-4 text-red-500" />
-                        <span className="text-sm font-medium">Heart Rate (Average)</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="font-medium">78</span>
-                        <span className="text-xs text-muted-foreground">BPM</span>
-                      </div>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100">
-                      <div className="h-2 rounded-full bg-gradient-to-r from-blue-300 to-red-500 w-[65%]"></div>
-                    </div>
-                    
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Activity className="mr-2 h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-medium">Oxygen Level (Average)</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="font-medium">97</span>
-                        <span className="text-xs text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100">
-                      <div className="h-2 rounded-full bg-gradient-to-r from-red-300 to-green-500 w-[85%]"></div>
-                    </div>
-                    
-                    <div className="mt-4 grid grid-cols-2 gap-4">
-                      <Card className="border-0 shadow-sm">
-                        <CardContent className="p-3">
-                          <div className="text-xs text-muted-foreground">Weekly Steps</div>
-                          <div className="mt-1 text-xl font-semibold">47,230</div>
-                          <div className="text-xs text-green-600">+12% from last week</div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="border-0 shadow-sm">
-                        <CardContent className="p-3">
-                          <div className="text-xs text-muted-foreground">AQI Exposure</div>
-                          <div className="mt-1 text-xl font-semibold">63</div>
-                          <div className="text-xs text-amber-600">Moderate avg. exposure</div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-2">
-                    <div className="h-10 w-full rounded bg-muted/20 animate-pulse" />
-                    <div className="h-10 w-full rounded bg-muted/20 animate-pulse" />
-                  </div>
-                ) : (
-                  <div className="rounded-lg border bg-muted/10 p-4">
-                    <p className="text-center text-sm text-muted-foreground">
-                      You have no new notifications
-                    </p>
-                    <Button variant="outline" className="mt-4 w-full">
-                      Set up alerts
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  AI Recommendations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-2">
-                    <div className="h-10 w-full rounded bg-muted/20 animate-pulse" />
-                    <div className="h-10 w-full rounded bg-muted/20 animate-pulse" />
-                    <div className="h-10 w-full rounded bg-muted/20 animate-pulse" />
-                  </div>
-                ) : (
-                  <ul className="space-y-3">
-                    {mockAIRecommendations.map((recommendation, index) => (
-                      <motion.li
-                        key={index}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: 0.8 + index * 0.1 }}
-                        className="rounded-lg bg-muted/10 px-4 py-3 text-sm"
-                      >
-                        {recommendation}
-                      </motion.li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+  // Show loading state while checking authentication
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
-    </AnimatedBackground>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="mt-1 text-muted-foreground">
+              Welcome back, {user?.firstName || 'User'}! Here's your air quality overview.
+            </p>
+          </div>
+          <Button 
+            className="mt-4 md:mt-0"
+            onClick={() => {
+              toast({
+                title: "Report Generated",
+                description: "Your air quality report has been sent to your email",
+              });
+            }}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            Generate Report
+          </Button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Current AQI</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">52</div>
+              <p className="text-xs text-muted-foreground">Moderate</p>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
+                <div className="h-1.5 w-[52%] rounded-full bg-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Daily Exposure</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">38%</div>
+              <div className="flex items-center text-xs text-green-600">
+                <ArrowDownRight className="mr-1 h-4 w-4" />
+                <span>12% less than average</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Main Pollutant</CardTitle>
+              <Wind className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">PM2.5</div>
+              <div className="flex items-center text-xs text-red-600">
+                <ArrowUpRight className="mr-1 h-4 w-4" />
+                <span>18 μg/m³ (Above WHO limit)</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Humidity</CardTitle>
+              <Droplets className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">62%</div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <span>Comfortable range</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="daily" className="mt-6">
+          <TabsList>
+            <TabsTrigger value="daily">Daily Trend</TabsTrigger>
+            <TabsTrigger value="weekly">Weekly Analysis</TabsTrigger>
+            <TabsTrigger value="pollutants">Pollutants</TabsTrigger>
+            <TabsTrigger value="locations">My Locations</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="daily" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Air Quality Index (24 Hours)</CardTitle>
+                <CardDescription>
+                  Today's AQI measurements throughout the day
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={airQualityData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="aqi" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="weekly" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Weekly Air Quality Comparison</CardTitle>
+                <CardDescription>
+                  AQI levels and your exposure over the past week
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weeklyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="aqi" name="AQI Level" fill="#8884d8" />
+                      <Bar dataKey="exposure" name="Your Exposure" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="pollutants" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pollutant Breakdown</CardTitle>
+                <CardDescription>
+                  Current levels of individual pollutants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {pollutantData.map((pollutant) => (
+                    <div key={pollutant.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">{pollutant.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {pollutant.value} {pollutant.unit} / {pollutant.limit} {pollutant.unit}
+                        </div>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-muted">
+                        <div 
+                          className={cn(
+                            "h-2 rounded-full",
+                            pollutant.value > pollutant.limit * 0.8 ? "bg-red-500" : 
+                            pollutant.value > pollutant.limit * 0.5 ? "bg-yellow-500" : "bg-green-500"
+                          )}
+                          style={{ width: `${(pollutant.value / pollutant.limit) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="locations" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Saved Locations</CardTitle>
+                <CardDescription>
+                  Current air quality at your frequent locations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {locationData.map((location) => (
+                    <div key={location.name} className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-primary/10 p-2">
+                          <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{location.name}</div>
+                          <div className="text-sm text-muted-foreground">Updated 10 minutes ago</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-2xl font-bold">{location.aqi}</div>
+                        <div className={cn(
+                          "flex items-center text-sm",
+                          location.trend === 'up' ? "text-red-600" : "text-green-600"
+                        )}>
+                          {location.trend === 'up' ? (
+                            <ArrowUpRight className="mr-1 h-4 w-4" />
+                          ) : (
+                            <ArrowDownRight className="mr-1 h-4 w-4" />
+                          )}
+                          <span>{location.trend === 'up' ? 'Rising' : 'Falling'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </motion.div>
+    </div>
   );
 };
 
