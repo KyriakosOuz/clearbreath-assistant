@@ -4,12 +4,16 @@ import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -26,7 +30,7 @@ serve(async (req) => {
       lon = requestData.lon;
     }
     
-    const waqiApiKey = Deno.env.get('WAQI_API_KEY');
+    const waqiApiKey = Deno.env.get('WAQI_API_KEY') || 'demo';
     
     if (!waqiApiKey) {
       console.error('Missing WAQI API key');
@@ -44,7 +48,7 @@ serve(async (req) => {
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch WAQI air quality data');
+      throw new Error(`Failed to fetch WAQI air quality data: ${response.status}`);
     }
     
     const rawData = await response.json();
