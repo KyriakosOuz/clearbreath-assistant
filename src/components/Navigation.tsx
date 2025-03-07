@@ -2,7 +2,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Wind, BarChart2, Map, Navigation as NavigationIcon } from 'lucide-react';
+import { Wind, BarChart2, Map, Navigation as NavigationIcon, MessageSquare } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
@@ -11,7 +11,8 @@ const Navigation = () => {
     { to: '/', label: 'Home', icon: Wind },
     { to: '/dashboard', label: 'Dashboard', icon: BarChart2 },
     { to: '/map', label: 'Air Quality Map', icon: Map },
-    { to: '/clean-route', label: 'Clean Routes', icon: NavigationIcon }
+    { to: '/clean-route', label: 'Clean Routes', icon: NavigationIcon },
+    { to: '/chat', label: 'AI Assistant', icon: MessageSquare }
   ];
   
   return (

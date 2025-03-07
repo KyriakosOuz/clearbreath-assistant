@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Map from "./pages/Map";
 import CleanRoute from "./pages/CleanRoute";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 
@@ -25,6 +26,7 @@ const AnimatedRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/map" element={<Map />} />
         <Route path="/clean-route" element={<CleanRoute />} />
+        <Route path="/chat" element={<Chat />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
