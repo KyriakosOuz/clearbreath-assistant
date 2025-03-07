@@ -2,7 +2,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { Home, BarChart, MapPin, MessageSquare, Navigation, Wind } from 'lucide-react';
+import { Home, BarChart, MapPin, MessageSquare, Wind } from 'lucide-react';
 
 import { useTheme } from '@/hooks/use-theme';
 import Navigation from '@/components/Navigation';

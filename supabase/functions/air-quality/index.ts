@@ -35,10 +35,18 @@ serve(async (req) => {
   }
 
   try {
-    // Get the location from the request, or default to Thessaloniki
-    const url = new URL(req.url);
-    const lat = url.searchParams.get('lat') || '40.6403';
-    const lon = url.searchParams.get('lon') || '22.9439';
+    // Get the location from the request body, or default to Thessaloniki
+    let lat = '40.6403';
+    let lon = '22.9439';
+    
+    // Parse the request body to get lat/lon values
+    const requestData = await req.json().catch(() => ({}));
+    if (requestData && requestData.lat) {
+      lat = requestData.lat;
+    }
+    if (requestData && requestData.lon) {
+      lon = requestData.lon;
+    }
     
     const openWeatherApiKey = Deno.env.get('OPENWEATHER_API_KEY');
     

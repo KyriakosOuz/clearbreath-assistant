@@ -48,9 +48,9 @@ export const useAirQuality = (location?: { lat: number; lon: number }) => {
       const lat = location?.lat || 40.6403; // Default to Thessaloniki
       const lon = location?.lon || 22.9439;
 
+      // Update to pass coordinates in the body instead of params
       const { data, error } = await supabase.functions.invoke('air-quality', {
-        body: {},
-        params: { lat: lat.toString(), lon: lon.toString() }
+        body: { lat: lat.toString(), lon: lon.toString() }
       });
 
       if (error) {
