@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Home, BarChart, MapPin, MessageSquare, Navigation, Wind } from 'lucide-react';
 
 import { useTheme } from '@/hooks/use-theme';
-import { Navigation as NavigationComponent } from '@/components/Navigation';
+import Navigation from '@/components/Navigation';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Map from '@/pages/Map';
@@ -19,7 +20,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      <NavigationComponent />
+      <Navigation />
       <main className="app-content">
         <Routes>
           <Route path="/" element={<Index />} />

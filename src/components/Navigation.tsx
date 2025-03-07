@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -6,13 +7,13 @@ import {
   MapPin, 
   MessageSquare, 
   Settings, 
-  Navigation,
+  Navigation as NavigationIcon,
   Wind
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/clerk-react';
 
@@ -49,7 +50,7 @@ const Navigation = () => {
     {
       href: '/clean-route',
       label: 'Clean Route',
-      icon: Navigation,
+      icon: NavigationIcon,
     },
     {
       href: '/chat',

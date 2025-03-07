@@ -49,7 +49,8 @@ export const useAirQuality = (location?: { lat: number; lon: number }) => {
       const lon = location?.lon || 22.9439;
 
       const { data, error } = await supabase.functions.invoke('air-quality', {
-        query: { lat: lat.toString(), lon: lon.toString() }
+        body: {},
+        params: { lat: lat.toString(), lon: lon.toString() }
       });
 
       if (error) {
