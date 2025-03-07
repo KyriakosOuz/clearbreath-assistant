@@ -52,28 +52,7 @@ serve(async (req) => {
     // Process the WAQI data to match our application's format
     const processedData = {
       status: 'success',
-      data: {
-        aqi: rawData.data.aqi,
-        city: rawData.data.city.name,
-        coordinates: {
-          latitude: parseFloat(lat),
-          longitude: parseFloat(lon)
-        },
-        time: rawData.data.time.iso,
-        source: "WAQI",
-        station: rawData.data.city.name,
-        pollutants: {
-          'PM2.5': rawData.data.iaqi.pm25?.v || 0,
-          'PM10': rawData.data.iaqi.pm10?.v || 0,
-          'O3': rawData.data.iaqi.o3?.v || 0,
-          'NO2': rawData.data.iaqi.no2?.v || 0,
-          'SO2': rawData.data.iaqi.so2?.v || 0,
-          'CO': rawData.data.iaqi.co?.v || 0
-        },
-        dominantPollutant: rawData.data.dominentpol || null,
-        attributions: rawData.data.attributions || [],
-        forecast: rawData.data.forecast?.daily || null
-      }
+      data: rawData.data
     };
     
     console.log('Successfully fetched WAQI air quality data');
