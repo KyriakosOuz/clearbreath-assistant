@@ -1,189 +1,181 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation, Wind, AlertTriangle, Info } from 'lucide-react';
-import AnimatedBackground from '@/components/AnimatedBackground';
+import { CloudSun, Wind, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+import CleanRouteForm from '@/components/CleanRouteForm';
 import CleanRouteMap from '@/components/CleanRouteMap';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
+import AQIScale from '@/components/AQIScale';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface PollutionPoint {
+  lat: number;
+  lon: number;
+  aqi: number;
+  station: {
+    name: string;
+  };
+}
 
 const CleanRoute = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [startLocation, setStartLocation] = useState('');
-  const [endLocation, setEndLocation] = useState('');
-  const [isPlanning, setIsPlanning] = useState(false);
-  const { toast } = useToast();
-  
-  // Simulate data fetching
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const [origin, setOrigin] = useState<string | null>(null);
+  const [destination, setDestination] = useState<string | null>(null);
+  const [transportMode, setTransportMode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [pollutionData, setPollutionData] = useState<PollutionPoint[]>([]);
 
-  const handlePlanRoute = () => {
-    if (!startLocation || !endLocation) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both starting point and destination",
-        variant: "destructive",
+  const handleRouteSelected = async (origin: string, destination: string, transportMode: string) => {
+    setOrigin(origin);
+    setDestination(destination);
+    setTransportMode(transportMode);
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('clean-route-ai', {
+        body: { origin, destination, transportMode },
       });
-      return;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log('Clean route AI response:', data);
+      setRecommendation(data.recommendation);
+      setPollutionData(data.pollutionData || []);
+      toast.success('Route analysis complete!');
+    } catch (error) {
+      console.error('Error finding clean route:', error);
+      toast.error('Failed to analyze route. Please try again.');
+      setRecommendation('Unable to generate a recommendation at this time. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-
-    setIsPlanning(true);
-    
-    // Simulate AI route planning
-    setTimeout(() => {
-      setIsPlanning(false);
-      
-      // Show success notification
-      toast({
-        title: "Clean Route Found",
-        description: "AI has identified the cleanest route with 68% less pollution exposure",
-        variant: "health",
-      });
-    }, 2000);
   };
-  
+
+  // Determine if we have high pollution areas
+  const hasHighPollution = pollutionData.some(point => point.aqi > 100);
+
   return (
-    <AnimatedBackground intensity="light">
-      <div className="page-container">
-        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl font-bold"
-          >
-            Clean Route Planner
-          </motion.h1>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center gap-3"
-          >
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Info className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-2">
-                  <h4 className="font-medium">About Clean Routes</h4>
-                  <p className="text-sm text-muted-foreground">
-                    This AI-powered feature helps you find travel routes with the lowest pollution exposure,
-                    keeping your lungs safer on your daily commute.
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </motion.div>
+    <div className="flex flex-col w-full min-h-screen p-6 lg:pl-[70px] xl:pl-60">
+      <motion.div
+        className="flex flex-col gap-6 pb-20"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="flex items-center gap-2">
+              <CloudSun className="h-8 w-8 text-sky-500" /> 
+              Clean Route Planner
+            </span>
+          </h1>
+          <p className="text-muted-foreground">
+            Find the cleanest routes with the lowest air pollution to protect your health
+          </p>
         </div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="start" className="text-sm font-medium">Starting Point</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="start"
-                      placeholder="Enter starting location"
-                      className="pl-10"
-                      value={startLocation}
-                      onChange={(e) => setStartLocation(e.target.value)}
-                    />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left side - Form */}
+          <div className="lg:col-span-4 space-y-6">
+            <CleanRouteForm 
+              onRouteSelected={handleRouteSelected}
+              isLoading={loading}
+            />
+            
+            <AQIScale compact />
+            
+            {hasHighPollution && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>High Pollution Alert</AlertTitle>
+                <AlertDescription>
+                  There are areas with unhealthy air quality (AQI &gt; 100) along this route. 
+                  Consider following the recommended cleaner alternatives.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          {/* Right side - Map and Recommendations */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Map */}
+            <Card className="border shadow-sm">
+              <CardContent className="p-0 min-h-[400px] overflow-hidden rounded-md">
+                {origin && destination ? (
+                  <CleanRouteMap 
+                    origin={origin} 
+                    destination={destination}
+                    transportMode={transportMode || 'walking'}
+                    pollutionData={pollutionData}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[400px] bg-muted/20">
+                    <p className="text-muted-foreground">Select origin and destination to view the map</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="destination" className="text-sm font-medium">Destination</label>
-                  <div className="relative">
-                    <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="destination"
-                      placeholder="Enter destination" 
-                      className="pl-10"
-                      value={endLocation}
-                      onChange={(e) => setEndLocation(e.target.value)}
-                    />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* AI Recommendations */}
+            <Card className="border shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Wind className="mr-2 h-5 w-5 text-green-500" />
+                  AI Route Recommendations
+                </CardTitle>
+                <CardDescription>
+                  Personalized clean route suggestions powered by AI
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-[90%]" />
+                    <Skeleton className="h-4 w-[80%]" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-[85%]" />
                   </div>
-                </div>
-                
-                <Button 
-                  className="w-full"
-                  onClick={handlePlanRoute}
-                  disabled={isPlanning}
-                >
-                  {isPlanning ? 'Finding Cleanest Route...' : 'Plan Clean Route'}
-                </Button>
-                
-                <div className="pt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Wind className="h-3.5 w-3.5" />
-                  <span>
-                    AI optimizes routes to minimize pollution exposure based on real-time air quality data.
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium">Pollution Hotspots Today</h3>
-                  <ul className="mt-2 space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <div className="h-2 w-2 mt-1.5 rounded-full bg-red-500" />
-                      <span>City Center (AQI: 128) - Construction dust</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="h-2 w-2 mt-1.5 rounded-full bg-orange-500" />
-                      <span>Industrial Zone (AQI: 95) - Factory emissions</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="h-2 w-2 mt-1.5 rounded-full bg-orange-500" />
-                      <span>Main Highway (AQI: 87) - Traffic congestion</span>
-                    </li>
-                  </ul>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Clean route planning will automatically avoid these areas where possible.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 20 : 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <CleanRouteMap className="w-full" />
-        </motion.div>
-      </div>
-    </AnimatedBackground>
+                ) : recommendation ? (
+                  <ScrollArea className="h-[300px] rounded-md">
+                    <div className="space-y-4 pr-4">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {origin && destination && (
+                          <Badge variant="outline" className="bg-blue-50">
+                            {transportMode?.charAt(0).toUpperCase() + transportMode?.slice(1) || 'Walking'}
+                          </Badge>
+                        )}
+                        {hasHighPollution && (
+                          <Badge variant="destructive">
+                            High Pollution Detected
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="whitespace-pre-line">
+                        {recommendation}
+                      </div>
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center text-muted-foreground p-6">
+                    <Wind className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Select a route to get AI-powered clean route recommendations</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
