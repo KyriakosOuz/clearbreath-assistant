@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -11,7 +12,6 @@ import {
   LayoutDashboard,
   CloudSun,
   MapPin as MapPinIcon,
-  Navigation,
   MessageSquare as MessageSquareIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -54,7 +54,7 @@ const Navigation = () => {
     {
       name: "Clean Route",
       path: "/clean-route",
-      icon: Navigation,
+      icon: NavigationIcon,
     },
     {
       name: "Chat",
