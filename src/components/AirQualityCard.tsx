@@ -1,6 +1,7 @@
-
 import { motion } from 'framer-motion';
+import { MapPin, Clock, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import AirQualityStatusRing from './AirQualityStatusRing';
 import AirQualityAttributions from './AirQualityAttributions';
 
 type AirQualityLevel = 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe';
@@ -56,66 +57,91 @@ const AirQualityCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className={cn(
-        'rounded-2xl p-6 shadow-lg card-hover',
-        `aq-bg-${level}`,
+        'relative overflow-hidden rounded-2xl p-6',
+        'bg-gradient-to-br from-white/80 to-white/60',
+        'backdrop-blur-sm shadow-xl',
         className
       )}
     >
-      <div className="flex flex-col gap-4">
+      <div className="absolute inset-0 bg-gradient-to-br opacity-[0.08]" 
+        style={{
+          backgroundImage: `linear-gradient(to bottom right, 
+            ${level === 'good' ? '#4ade80, #22c55e' : 
+              level === 'moderate' ? '#facc15, #eab308' : 
+              level === 'unhealthy' ? '#f97316, #ea580c' : 
+              level === 'hazardous' ? '#ef4444, #dc2626' : 
+              '#7e22ce, #6b21a8'})`
+        }}
+      />
+      
+      <div className="relative flex flex-col gap-6">
         <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-xl font-medium">{location}</h3>
-            <p className="text-sm text-muted-foreground">Updated {updatedAt}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-xl font-medium">
+              <MapPin className="h-5 w-5" />
+              <h3>{location}</h3>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <p>Updated {updatedAt}</p>
+            </div>
             {source && (
-              <p className="text-xs text-muted-foreground mt-1">Source: {source}</p>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <Database className="h-3 w-3" />
+                <p>Source: {source}</p>
+              </div>
             )}
           </div>
-          <motion.div 
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-full',
-              'bg-white/80 backdrop-blur-sm shadow-md'
-            )}
-          >
-            <span className={cn('text-xl font-bold', `aq-text-${level}`)}>{aqi}</span>
-          </motion.div>
+          
+          <AirQualityStatusRing 
+            aqi={aqi} 
+            level={level} 
+            size="lg"
+          />
         </div>
         
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className={cn('text-sm font-medium', `aq-text-${level}`)}>{levelText}</span>
-            <span className="text-xs text-muted-foreground">AQI</span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-white/50">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(aqi / 3, 100)}%` }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className={cn(
-                'aqi-indicator',
-                {
-                  'bg-aqi-good': level === 'good',
-                  'bg-aqi-moderate': level === 'moderate',
-                  'bg-aqi-unhealthy': level === 'unhealthy',
-                  'bg-aqi-hazardous': level === 'hazardous',
-                  'bg-aqi-severe': level === 'severe',
-                }
-              )}
-            />
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className={cn(
+              'inline-block rounded-full px-4 py-1 text-sm font-medium',
+              {
+                'bg-green-100 text-green-700': level === 'good',
+                'bg-yellow-100 text-yellow-700': level === 'moderate',
+                'bg-orange-100 text-orange-700': level === 'unhealthy',
+                'bg-red-100 text-red-700': level === 'hazardous',
+                'bg-purple-100 text-purple-700': level === 'severe',
+              }
+            )}
+          >
+            {levelText}
+          </motion.div>
         </div>
         
         {pollutants && (
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            {Object.entries(pollutants).map(([key, value]) => (
-              <div key={key} className="rounded-lg bg-white/40 p-2">
-                <span className="text-xs text-muted-foreground">{key}</span>
-                <p className="font-medium">{value} µg/m³</p>
-              </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            {Object.entries(pollutants).map(([key, value], index) => (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                className="rounded-xl bg-white/40 p-3 backdrop-blur-sm"
+              >
+                <span className="text-sm font-medium">{key}</span>
+                <p className="mt-1 text-2xl font-semibold">{value}
+                  <span className="ml-1 text-xs text-muted-foreground">µg/m³</span>
+                </p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
         
         <AirQualityAttributions attributions={attributions} className="mt-2" />

@@ -9,17 +9,21 @@ interface AQIScaleProps {
 
 const AQIScale = ({ className, compact = false }: AQIScaleProps) => {
   const levels = [
-    { label: 'Good', color: 'bg-aqi-good', range: '0-50' },
-    { label: 'Moderate', color: 'bg-aqi-moderate', range: '51-100' },
-    { label: 'Unhealthy', color: 'bg-aqi-unhealthy', range: '101-150' },
-    { label: 'Hazardous', color: 'bg-aqi-hazardous', range: '151-300' },
-    { label: 'Severe', color: 'bg-aqi-severe', range: '301+' },
+    { label: 'Good', color: 'bg-aqi-good', textColor: 'text-green-700', range: '0-50' },
+    { label: 'Moderate', color: 'bg-aqi-moderate', textColor: 'text-yellow-700', range: '51-100' },
+    { label: 'Unhealthy', color: 'bg-aqi-unhealthy', textColor: 'text-orange-700', range: '101-150' },
+    { label: 'Hazardous', color: 'bg-aqi-hazardous', textColor: 'text-red-700', range: '151-300' },
+    { label: 'Severe', color: 'bg-aqi-severe', textColor: 'text-purple-700', range: '301+' },
   ];
 
   return (
-    <div className={cn('rounded-lg bg-white/80 p-4 shadow-md', className)}>
-      <h4 className="mb-3 text-sm font-medium">Air Quality Index Scale</h4>
-      <div className="flex w-full">
+    <div className={cn(
+      'rounded-xl bg-white/80 p-4 backdrop-blur-sm shadow-lg',
+      'border border-white/20',
+      className
+    )}>
+      <h4 className="mb-4 text-sm font-medium">Air Quality Index Scale</h4>
+      <div className="flex w-full gap-1">
         {levels.map((level, index) => (
           <motion.div
             key={level.label}
@@ -28,12 +32,20 @@ const AQIScale = ({ className, compact = false }: AQIScaleProps) => {
             transition={{ duration: 0.3, delay: index * 0.1 }}
             className="flex-1"
           >
-            <div className={cn('h-2 w-full', level.color)} />
+            <div className={cn(
+              'h-3 w-full rounded-full transition-transform hover:scale-105',
+              level.color
+            )} />
             {!compact && (
-              <div className="mt-1 text-center">
-                <p className="text-xs font-medium">{level.label}</p>
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 + index * 0.1 }}
+                className="mt-2 text-center"
+              >
+                <p className={cn("text-sm font-medium", level.textColor)}>{level.label}</p>
                 <p className="text-xs text-muted-foreground">{level.range}</p>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         ))}
