@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -8,7 +7,12 @@ import {
   MessageSquare, 
   Settings, 
   Navigation as NavigationIcon,
-  Wind
+  Wind,
+  LayoutDashboard,
+  CloudSun,
+  MapPin as MapPinIcon,
+  Navigation,
+  MessageSquare as MessageSquareIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
@@ -26,36 +30,36 @@ const Navigation = () => {
     setIsSettingsOpen((prev) => !prev);
   };
 
-  const links = [
+  const routes = [
     {
-      href: '/',
-      label: 'Home',
+      name: "Home",
+      path: "/",
       icon: Home,
     },
     {
-      href: '/dashboard',
-      label: 'Dashboard',
-      icon: BarChart,
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: LayoutDashboard,
     },
     {
-      href: '/map',
-      label: 'Map',
-      icon: MapPin,
+      name: "Air Quality",
+      path: "/air-quality",
+      icon: CloudSun,
     },
     {
-      href: '/air-quality',
-      label: 'Air Quality',
-      icon: Wind,
+      name: "Map",
+      path: "/map",
+      icon: MapPinIcon,
     },
     {
-      href: '/clean-route',
-      label: 'Clean Route',
-      icon: NavigationIcon,
+      name: "Clean Route",
+      path: "/clean-route",
+      icon: Navigation,
     },
     {
-      href: '/chat',
-      label: 'Chat',
-      icon: MessageSquare,
+      name: "Chat",
+      path: "/chat",
+      icon: MessageSquareIcon,
     },
   ];
 
@@ -90,10 +94,10 @@ const Navigation = () => {
       
       <ScrollArea className="flex-1 space-y-4 p-4">
         <div className="space-y-1">
-          {links.map((link) => (
+          {routes.map((route) => (
             <motion.a
-              key={link.href}
-              href={link.href}
+              key={route.path}
+              href={route.path}
               className={cn(
                 "group flex items-center space-x-3 rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
                 collapsed ? "justify-center" : "justify-start"
@@ -101,8 +105,8 @@ const Navigation = () => {
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.2 }}
             >
-              <link.icon className="h-4 w-4" />
-              {!collapsed && <span>{link.label}</span>}
+              <route.icon className="h-4 w-4" />
+              {!collapsed && <span>{route.name}</span>}
             </motion.a>
           ))}
         </div>
