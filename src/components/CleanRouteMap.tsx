@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, ArrowRight, AlertTriangle } from 'lucide-react';
@@ -8,6 +7,17 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CleanRouteMapProps {
   className?: string;
+  origin: string;
+  destination: string;
+  transportMode: string;
+  pollutionData: Array<{
+    lat: number;
+    lon: number;
+    aqi: number;
+    station: {
+      name: string;
+    };
+  }>;
 }
 
 interface Route {
@@ -74,7 +84,7 @@ const getPollutionColor = (level: number): string => {
   return 'bg-red-500';
 };
 
-const CleanRouteMap = ({ className }: CleanRouteMapProps) => {
+const CleanRouteMap = ({ className, origin, destination, transportMode, pollutionData }: CleanRouteMapProps) => {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [showRoutes, setShowRoutes] = useState(false);
