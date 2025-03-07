@@ -1,12 +1,15 @@
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, MapPin, Clock, Info } from 'lucide-react';
+import { RefreshCw, MapPin, Clock, Info, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAirQuality } from '@/hooks/use-air-quality';
+import { useAirQuality, DataSource } from '@/hooks/use-air-quality';
 import { cn } from '@/lib/utils';
 import AQIScale from '@/components/AQIScale';
+import AirQualitySourceSelector from '@/components/AirQualitySourceSelector';
+import { Badge } from '@/components/ui/badge';
 
 interface AirQualityWidgetProps {
   latitude?: number;
@@ -38,8 +41,18 @@ const AirQualityWidget = ({
   longitude, 
   className 
 }: AirQualityWidgetProps) => {
-  const { data, isLoading, lastUpdated, refetch } = useAirQuality(
-    latitude && longitude ? { lat: latitude, lon: longitude } : undefined
+  const [dataSource, setDataSource] = useState<DataSource>('combined');
+  
+  const { 
+    data, 
+    openWeatherData, 
+    waqiData,
+    isLoading, 
+    lastUpdated, 
+    refetch 
+  } = useAirQuality(
+    latitude && longitude ? { lat: latitude, lon: longitude } : undefined,
+    { source: dataSource }
   );
   
   const aqi = data?.aqi || 0;
@@ -103,7 +116,12 @@ const AirQualityWidget = ({
         </div>
       </div>
       
-      <div className="mt-4">
+      <AirQualitySourceSelector 
+        source={dataSource} 
+        onChange={setDataSource} 
+      />
+      
+      <div className="mt-2">
         {isLoading ? (
           <>
             <Skeleton className="h-16 w-16 rounded-full mx-auto mb-3" />
@@ -127,6 +145,19 @@ const AirQualityWidget = ({
                 <span className="text-2xl font-bold">{aqi}</span>
               </div>
               <span className="mt-2 font-medium">{levelText}</span>
+              
+              {data?.source && (
+                <Badge variant="outline" className="mt-1 text-[10px]">
+                  <Database className="h-2.5 w-2.5 mr-1" />
+                  {data.source}
+                </Badge>
+              )}
+              
+              {data?.station && (
+                <span className="mt-1 text-[10px] text-muted-foreground">
+                  Station: {data.station}
+                </span>
+              )}
             </div>
             
             <div className="mt-4 grid grid-cols-3 gap-2">
@@ -138,9 +169,34 @@ const AirQualityWidget = ({
               ))}
             </div>
             
-            <div className="mt-3 flex items-center justify-center text-xs text-muted-foreground">
+            {data?.dominantPollutant && (
+              <div className="mt-3 text-xs text-center">
+                <span className="text-muted-foreground">Dominant pollutant: </span>
+                <span className="font-medium">{data.dominantPollutant}</span>
+              </div>
+            )}
+            
+            <div className="mt-2 flex items-center justify-center text-xs text-muted-foreground">
               <Clock className="mr-1 h-3 w-3" />
               <span>Updated at {formattedTime}</span>
+            </div>
+            
+            <div className="mt-4 pt-3 border-t border-muted">
+              <h4 className="text-xs font-medium mb-2">Source comparison</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <div className="text-xs text-muted-foreground">OpenWeather</div>
+                  <div className="font-medium text-sm">
+                    {openWeatherData ? openWeatherData.aqi : 'N/A'}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <div className="text-xs text-muted-foreground">WAQI</div>
+                  <div className="font-medium text-sm">
+                    {waqiData ? waqiData.aqi : 'N/A'}
+                  </div>
+                </div>
+              </div>
             </div>
           </>
         )}

@@ -1,6 +1,7 @@
 
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import AirQualityAttributions from './AirQualityAttributions';
 
 type AirQualityLevel = 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe';
 
@@ -11,6 +12,11 @@ interface AirQualityCardProps {
   pollutants?: {
     [key: string]: number;
   };
+  source?: string;
+  attributions?: Array<{
+    name: string;
+    url: string;
+  }>;
   className?: string;
 }
 
@@ -32,7 +38,15 @@ const getAQIText = (level: AirQualityLevel): string => {
   }
 };
 
-const AirQualityCard = ({ aqi, location, updatedAt, pollutants, className }: AirQualityCardProps) => {
+const AirQualityCard = ({ 
+  aqi, 
+  location, 
+  updatedAt, 
+  pollutants, 
+  source,
+  attributions,
+  className 
+}: AirQualityCardProps) => {
   const level = getAQILevel(aqi);
   const levelText = getAQIText(level);
   
@@ -52,6 +66,9 @@ const AirQualityCard = ({ aqi, location, updatedAt, pollutants, className }: Air
           <div>
             <h3 className="text-xl font-medium">{location}</h3>
             <p className="text-sm text-muted-foreground">Updated {updatedAt}</p>
+            {source && (
+              <p className="text-xs text-muted-foreground mt-1">Source: {source}</p>
+            )}
           </div>
           <motion.div 
             initial={{ scale: 0.8 }}
@@ -100,6 +117,8 @@ const AirQualityCard = ({ aqi, location, updatedAt, pollutants, className }: Air
             ))}
           </div>
         )}
+        
+        <AirQualityAttributions attributions={attributions} className="mt-2" />
       </div>
     </motion.div>
   );
