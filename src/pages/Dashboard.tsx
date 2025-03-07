@@ -1,27 +1,17 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, BarChart2, Bell, User } from 'lucide-react';
+import { Calendar, MapPin, Clock, BarChart2, Bell, User, Heart, Activity } from 'lucide-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import AirQualityCard from '@/components/AirQualityCard';
 import HealthRecommendation from '@/components/HealthRecommendation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAirQuality } from '@/hooks/use-air-quality';
 
 // Mock data for air quality
 const mockAirQuality = {
-  current: {
-    aqi: 42,
-    location: 'Thessaloniki, City Center',
-    updatedAt: '3 minutes ago',
-    pollutants: {
-      'PM2.5': 12,
-      'PM10': 24,
-      'O3': 68,
-      'NO2': 15
-    }
-  },
   forecast: [
     { time: '12:00', aqi: 45 },
     { time: '14:00', aqi: 52 },
@@ -37,15 +27,25 @@ const mockAirQuality = {
   ]
 };
 
-// Mock recommendations from AI
+// Health recommendations from AI
 const mockAIRecommendations = [
-  "Based on current air quality, it's a good day for outdoor activities.",
-  "Pollen levels may rise tomorrow, consider taking preventive medication if you have allergies.",
-  "Drink plenty of water to help your body naturally remove inhaled particles."
+  "Based on current air quality and your health metrics, it's a good day for light outdoor activities.",
+  "Your heart rate has been optimal today. Continue your current activity level.",
+  "Remember to stay hydrated to help your body naturally remove inhaled particles."
 ];
 
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const { data: airQualityData } = useAirQuality();
+  
+  // Determine AQI level from AQI value
+  const getAQILevel = (aqi: number) => {
+    if (aqi <= 50) return 'good';
+    if (aqi <= 100) return 'moderate';
+    if (aqi <= 150) return 'unhealthy';
+    if (aqi <= 300) return 'hazardous';
+    return 'severe';
+  };
   
   // Simulate data fetching
   useEffect(() => {
@@ -55,6 +55,17 @@ const Dashboard = () => {
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Get air quality data
+  const aqi = airQualityData?.aqi || 42;
+  const location = airQualityData?.city || 'Thessaloniki, City Center';
+  const updatedAt = airQualityData?.time ? new Date(airQualityData.time).toLocaleTimeString() : '3 minutes ago';
+  const pollutants = airQualityData?.pollutants || {
+    'PM2.5': 12,
+    'PM10': 24,
+    'O3': 68,
+    'NO2': 15
+  };
   
   return (
     <AnimatedBackground intensity="light">
@@ -77,10 +88,10 @@ const Dashboard = () => {
               <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
             ) : (
               <AirQualityCard 
-                aqi={mockAirQuality.current.aqi}
-                location={mockAirQuality.current.location}
-                updatedAt={mockAirQuality.current.updatedAt}
-                pollutants={mockAirQuality.current.pollutants}
+                aqi={aqi}
+                location={location}
+                updatedAt={updatedAt}
+                pollutants={pollutants}
               />
             )}
           </motion.div>
@@ -93,7 +104,10 @@ const Dashboard = () => {
             {isLoading ? (
               <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
             ) : (
-              <HealthRecommendation aqiLevel="good" />
+              <HealthRecommendation 
+                aqiLevel={getAQILevel(aqi) as 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe'} 
+                pollutants={pollutants}
+              />
             )}
           </motion.div>
         </div>
@@ -114,9 +128,9 @@ const Dashboard = () => {
                   <MapPin className="h-4 w-4" />
                   <span>Nearby Locations</span>
                 </TabsTrigger>
-                <TabsTrigger value="history" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>History</span>
+                <TabsTrigger value="health" className="flex items-center gap-2">
+                  <Heart className="h-4 w-4" />
+                  <span>Health Trends</span>
                 </TabsTrigger>
               </TabsList>
             </motion.div>
@@ -201,7 +215,7 @@ const Dashboard = () => {
               )}
             </TabsContent>
             
-            <TabsContent value="history">
+            <TabsContent value="health">
               {isLoading ? (
                 <div className="h-[200px] rounded-xl bg-muted/20 animate-pulse" />
               ) : (
@@ -209,15 +223,55 @@ const Dashboard = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
-                  className="flex items-center justify-center rounded-xl bg-white p-8 shadow-md"
+                  className="rounded-xl bg-white p-4 shadow-md"
                 >
-                  <div className="text-center">
-                    <BarChart2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">Historical Data</h3>
-                    <p className="mt-2 text-muted-foreground">
-                      Sign in to view your air quality history and trends
-                    </p>
-                    <Button className="mt-4">Sign In</Button>
+                  <h3 className="mb-4 text-lg font-medium">Your Health Trends</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Heart className="mr-2 h-4 w-4 text-red-500" />
+                        <span className="text-sm font-medium">Heart Rate (Average)</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className="font-medium">78</span>
+                        <span className="text-xs text-muted-foreground">BPM</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-gray-100">
+                      <div className="h-2 rounded-full bg-gradient-to-r from-blue-300 to-red-500 w-[65%]"></div>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Activity className="mr-2 h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-medium">Oxygen Level (Average)</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className="font-medium">97</span>
+                        <span className="text-xs text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-gray-100">
+                      <div className="h-2 rounded-full bg-gradient-to-r from-red-300 to-green-500 w-[85%]"></div>
+                    </div>
+                    
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <Card className="border-0 shadow-sm">
+                        <CardContent className="p-3">
+                          <div className="text-xs text-muted-foreground">Weekly Steps</div>
+                          <div className="mt-1 text-xl font-semibold">47,230</div>
+                          <div className="text-xs text-green-600">+12% from last week</div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="border-0 shadow-sm">
+                        <CardContent className="p-3">
+                          <div className="text-xs text-muted-foreground">AQI Exposure</div>
+                          <div className="mt-1 text-xl font-semibold">63</div>
+                          <div className="text-xs text-amber-600">Moderate avg. exposure</div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </motion.div>
               )}

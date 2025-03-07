@@ -1,18 +1,21 @@
 
 import { motion } from 'framer-motion';
-import { Heart, Activity, User, Shield, Clock } from 'lucide-react';
+import { Heart, Activity, User, Shield, Clock, Smartphone, BellRing, XCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
+import { useHealthData } from '@/hooks/use-health-data';
 
 type AirQualityLevel = 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe';
 
 interface HealthRecommendationProps {
   aqiLevel: AirQualityLevel;
   className?: string;
-  heartRate?: number;
-  oxygenLevel?: number;
+  pollutants?: {
+    [key: string]: number;
+  };
 }
 
 const getRecommendations = (level: AirQualityLevel) => {
@@ -55,86 +58,46 @@ const getRecommendations = (level: AirQualityLevel) => {
   }
 };
 
-// Mock smartwatch data - would be fetched from real APIs
-const mockSmartWatchData = {
-  heartRate: 85,
-  oxygenLevel: 95,
-  steps: 6500,
-  lastUpdated: '2 minutes ago'
-};
-
 const HealthRecommendation = ({ 
   aqiLevel, 
   className,
-  heartRate = mockSmartWatchData.heartRate,
-  oxygenLevel = mockSmartWatchData.oxygenLevel 
+  pollutants = { 'PM2.5': 12, 'PM10': 24, 'O3': 68, 'NO2': 15 }
 }: HealthRecommendationProps) => {
   const { general, sensitive, icon: Icon, color } = getRecommendations(aqiLevel);
   const { toast } = useToast();
-  const [hasShownHealthWarning, setHasShownHealthWarning] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   
-  // Function to generate AI recommendation based on health data
-  const generateAIRecommendation = () => {
-    // In a real implementation, this would call Mistral AI
-    // For now, we'll use conditional logic to simulate AI responses
-
-    // Simulate the AI generating personalized health advice
-    let aiRecommendation = "";
-    
-    if (heartRate > 100 && aqiLevel !== 'good') {
-      // High heart rate + poor air quality
-      aiRecommendation = "Your elevated heart rate combined with current air quality suggests possible respiratory stress. Consider moving indoors, staying hydrated, and monitoring your symptoms.";
-      
-      toast({
-        variant: "emergency",
-        title: "Health Alert: Elevated Heart Rate",
-        description: aiRecommendation,
-      });
-      
-      if (aqiLevel === 'hazardous' || aqiLevel === 'severe') {
-        // Simulate emergency alert
-        setTimeout(() => {
-          toast({
-            variant: "destructive",
-            title: "EMERGENCY ALERT",
-            description: "Dangerous conditions detected. Your emergency contacts have been notified of your location.",
-          });
-        }, 3000);
-      }
-    } else if (oxygenLevel < 94 && (aqiLevel === 'unhealthy' || aqiLevel === 'hazardous' || aqiLevel === 'severe')) {
-      // Low oxygen + poor air quality
-      aiRecommendation = "Your oxygen levels are below optimal range and air quality is poor. Please move to a well-ventilated indoor location, reduce physical activity, and consider using supplemental oxygen if prescribed.";
-      
-      toast({
-        variant: "emergency",
-        title: "Health Alert: Low Oxygen Levels",
-        description: aiRecommendation,
-      });
-    } else if (aqiLevel === 'moderate' || aqiLevel === 'unhealthy') {
-      // Moderate conditions
-      aiRecommendation = "Based on current air quality and your health metrics, consider staying hydrated and taking regular breaks if spending time outdoors.";
-      
-      toast({
-        variant: "health",
-        title: "Health Recommendation",
-        description: aiRecommendation,
-      });
+  // Get the numeric AQI value for the hook
+  const getNumericAQI = (level: AirQualityLevel): number => {
+    switch (level) {
+      case 'good': return 30;
+      case 'moderate': return 75;
+      case 'unhealthy': return 125;
+      case 'hazardous': return 200;
+      case 'severe': return 300;
+      default: return 50;
     }
-    
-    return aiRecommendation;
   };
   
-  // Check health status on load and when conditions change
-  useEffect(() => {
-    // Don't show alerts on first render to avoid overwhelming the user
-    if (!hasShownHealthWarning && (
-      (heartRate > 100 && aqiLevel !== 'good') || 
-      (oxygenLevel < 94 && aqiLevel !== 'good')
-    )) {
-      generateAIRecommendation();
-      setHasShownHealthWarning(true);
+  const {
+    healthData,
+    recommendation,
+    isLoading,
+    connectDevice,
+    disconnectDevice,
+    updateHealthData,
+    getRecommendation
+  } = useHealthData(getNumericAQI(aqiLevel), pollutants);
+  
+  // Format the time for display
+  const formatTime = (isoString: string): string => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return 'Unknown';
     }
-  }, [aqiLevel, heartRate, oxygenLevel, hasShownHealthWarning]);
+  };
   
   return (
     <motion.div 
@@ -168,32 +131,134 @@ const HealthRecommendation = ({
           <h4 className="text-sm font-medium flex items-center gap-2">
             <Heart className="h-4 w-4 text-red-500" />
             Your Health Metrics
+            {healthData.connected ? (
+              <span className="ml-auto text-xs flex items-center text-green-600">
+                <span className="relative flex h-2 w-2 mr-1">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                Connected to {healthData.deviceType}
+              </span>
+            ) : (
+              <Dialog open={isConnectModalOpen} onOpenChange={setIsConnectModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="ml-auto h-6 text-xs">
+                    <Smartphone className="h-3 w-3 mr-1" />
+                    Connect Device
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Connect to a Health Device</DialogTitle>
+                    <DialogDescription>
+                      Select a smartwatch or health tracking device to connect with.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Button onClick={() => { connectDevice('GoogleFit'); setIsConnectModalOpen(false); }}>
+                      Connect to Google Fit (Wear OS)
+                    </Button>
+                    <Button onClick={() => { connectDevice('HuaweiHealth'); setIsConnectModalOpen(false); }}>
+                      Connect to Huawei Health Kit
+                    </Button>
+                    <Button onClick={() => { connectDevice('AppleHealth'); setIsConnectModalOpen(false); }}>
+                      Connect to Apple Health
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </h4>
           
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-blue-50 p-3">
+            <div className={cn(
+              "rounded-lg p-3",
+              healthData.heartRate > 100 ? "bg-red-50" : "bg-blue-50"
+            )}>
               <div className="text-xs text-muted-foreground">Heart Rate</div>
-              <div className="mt-1 text-lg font-semibold">{heartRate} BPM</div>
+              <div className="mt-1 text-lg font-semibold">
+                {healthData.heartRate} 
+                <span className="text-sm font-normal ml-1">BPM</span>
+              </div>
             </div>
             
-            <div className="rounded-lg bg-blue-50 p-3">
+            <div className={cn(
+              "rounded-lg p-3",
+              healthData.oxygenLevel < 95 ? "bg-red-50" : "bg-blue-50"
+            )}>
               <div className="text-xs text-muted-foreground">Oxygen Level</div>
-              <div className="mt-1 text-lg font-semibold">{oxygenLevel}%</div>
+              <div className="mt-1 text-lg font-semibold">{healthData.oxygenLevel}%</div>
             </div>
           </div>
           
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Clock className="mr-1 h-3 w-3" /> 
-            Last updated: {mockSmartWatchData.lastUpdated}
+          {healthData.connected && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-blue-50 p-3">
+                <div className="text-xs text-muted-foreground">Steps Today</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {healthData.steps?.toLocaleString() || 0}
+                </div>
+              </div>
+              
+              <div className="rounded-lg bg-blue-50 p-3">
+                <div className="text-xs text-muted-foreground">Stress Level</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {healthData.stressLevel || 0}
+                  <span className="text-sm font-normal ml-1">/10</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div>
+              <Clock className="mr-1 inline-block h-3 w-3" /> 
+              Updated: {formatTime(healthData.lastUpdated)}
+            </div>
+            {healthData.connected && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs text-muted-foreground"
+                onClick={disconnectDevice}
+              >
+                <XCircle className="h-3 w-3 mr-1" /> Disconnect
+              </Button>
+            )}
           </div>
           
+          {recommendation && (
+            <div className={cn(
+              "mt-2 rounded-lg p-3 text-sm",
+              recommendation.isEmergency ? "bg-red-100 text-red-800" : "bg-blue-50 text-blue-800"
+            )}>
+              {recommendation.isEmergency && (
+                <div className="flex items-center mb-1 text-red-600 font-semibold">
+                  <BellRing className="h-4 w-4 mr-1 animate-pulse" />
+                  ALERT
+                </div>
+              )}
+              <p>{recommendation.text}</p>
+            </div>
+          )}
+          
           <Button 
-            onClick={generateAIRecommendation}
+            onClick={getRecommendation}
             variant="outline" 
             className="w-full"
+            disabled={isLoading}
           >
-            <Activity className="mr-2 h-4 w-4" />
-            Get AI Health Recommendation
+            {isLoading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Activity className="mr-2 h-4 w-4" />
+                Get AI Health Recommendation
+              </>
+            )}
           </Button>
         </div>
       </div>
