@@ -32,13 +32,14 @@ const Navigation = () => {
   // Safely attempt to use Clerk's hooks
   let user = null;
   let isLoaded = false;
-  let clerk = null;
+  let clerkInstance = null;
   
   try {
     const userResult = useUser();
     user = userResult.user;
     isLoaded = userResult.isLoaded;
-    clerk = useClerk().clerk;
+    const { signOut } = useClerk();
+    clerkInstance = { signOut };
   } catch (error) {
     console.log('Clerk authentication not available');
   }
@@ -48,8 +49,8 @@ const Navigation = () => {
   };
 
   const handleSignOut = async () => {
-    if (clerk) {
-      await clerk.signOut();
+    if (clerkInstance && clerkInstance.signOut) {
+      await clerkInstance.signOut();
       navigate('/');
     }
   };
