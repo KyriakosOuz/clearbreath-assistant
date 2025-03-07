@@ -9,56 +9,143 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      queries: {
+      air_quality_alerts: {
         Row: {
+          aqi_threshold: number
           created_at: string
-          id: number
-          prompt: string
-          schema: string | null
-          sql_result: string
+          id: string
+          is_active: boolean | null
+          location_name: string
           user_id: string
         }
         Insert: {
+          aqi_threshold: number
           created_at?: string
-          id?: number
-          prompt: string
-          schema?: string | null
-          sql_result: string
+          id?: string
+          is_active?: boolean | null
+          location_name: string
           user_id: string
         }
         Update: {
+          aqi_threshold?: number
           created_at?: string
-          id?: number
-          prompt?: string
-          schema?: string | null
-          sql_result?: string
+          id?: string
+          is_active?: boolean | null
+          location_name?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "air_quality_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_data: {
+        Row: {
+          date: string
+          heart_rate: number | null
+          id: string
+          respiratory_rate: number | null
+          sleep_hours: number | null
+          steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date?: string
+          heart_rate?: number | null
+          id?: string
+          respiratory_rate?: number | null
+          sleep_hours?: number | null
+          steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          heart_rate?: number | null
+          id?: string
+          respiratory_rate?: number | null
+          sleep_hours?: number | null
+          steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
         }
         Relationships: []
       }
-      uploaded_schemas: {
+      saved_routes: {
         Row: {
           created_at: string
-          id: number
+          destination: string
+          id: string
+          is_favorite: boolean | null
           name: string
-          schema_sql: string
+          origin: string
+          transport_mode: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          id?: number
+          destination: string
+          id?: string
+          is_favorite?: boolean | null
           name: string
-          schema_sql: string
+          origin: string
+          transport_mode?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          id?: number
+          destination?: string
+          id?: string
+          is_favorite?: boolean | null
           name?: string
-          schema_sql?: string
+          origin?: string
+          transport_mode?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_routes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/clerk-react';
+import { useHealthDataStorage, StoredHealthData } from './use-health-data-storage';
 
 export interface HealthData {
   heartRate: number;
@@ -19,48 +21,45 @@ export interface HealthRecommendation {
   timestamp: string;
 }
 
-// Mock data - in a real implementation, these would come from the smartwatch APIs
-const mockHealthData: HealthData = {
-  heartRate: 78,
-  oxygenLevel: 97,
-  steps: 6500,
-  stressLevel: 3,
-  lastUpdated: new Date().toISOString(),
-  connected: true,
-  deviceType: 'GoogleFit'
-};
-
 export const useHealthData = (aqiLevel: number, pollutants: { [key: string]: number }) => {
-  const [healthData, setHealthData] = useState<HealthData>(mockHealthData);
+  const [healthData, setHealthData] = useState<HealthData>({
+    heartRate: 75,
+    oxygenLevel: 98,
+    steps: 0,
+    stressLevel: 2,
+    lastUpdated: new Date().toISOString(),
+    connected: false
+  });
   const [recommendation, setRecommendation] = useState<HealthRecommendation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, isSignedIn } = useUser();
+  
+  // Connect to our Supabase stored health data
+  const { 
+    healthData: storedHealthData,
+    saveHealthData,
+    isLoading: isStorageLoading
+  } = useHealthDataStorage();
 
-  // Simulate fetching health data from a smartwatch
+  // Update from stored data when available
   useEffect(() => {
-    // In a real implementation, this would connect to Google Fit or Huawei Health APIs
-    const fetchHealthData = () => {
-      // Mock data updates to simulate real-time changes
-      const newHeartRate = Math.floor(Math.random() * 30) + 65; // 65-95 range
-      const newOxygenLevel = Math.floor(Math.random() * 5) + 94; // 94-99 range
-      
-      setHealthData({
-        ...mockHealthData,
-        heartRate: newHeartRate,
-        oxygenLevel: newOxygenLevel,
-        lastUpdated: new Date().toISOString()
-      });
-    };
-
-    // Fetch initial data
-    fetchHealthData();
-    
-    // Update health data every 30 seconds
-    const intervalId = setInterval(fetchHealthData, 30000);
-    
-    return () => clearInterval(intervalId);
-  }, []);
+    if (storedHealthData) {
+      setHealthData(prevData => ({
+        ...prevData,
+        heartRate: storedHealthData.heart_rate || prevData.heartRate,
+        // Map respiratory_rate from database to oxygenLevel in UI
+        oxygenLevel: storedHealthData.respiratory_rate || prevData.oxygenLevel,
+        steps: storedHealthData.steps || prevData.steps,
+        // Map sleep_hours to stressLevel (as a proxy for now)
+        stressLevel: storedHealthData.sleep_hours ? Math.floor(10 - storedHealthData.sleep_hours) : prevData.stressLevel,
+        lastUpdated: storedHealthData.updated_at,
+        connected: true,
+        deviceType: 'Manual'
+      }));
+    }
+  }, [storedHealthData]);
 
   // Get AI recommendations based on health and air quality data
   const getRecommendation = async () => {
@@ -90,7 +89,7 @@ export const useHealthData = (aqiLevel: number, pollutants: { [key: string]: num
         toast({
           variant: "emergency",
           title: "HEALTH ALERT",
-          description: responseData.recommendation.substring(0, 100) + "..."
+          description: responseData.text.substring(0, 100) + "..."
         });
       }
       
@@ -118,13 +117,38 @@ export const useHealthData = (aqiLevel: number, pollutants: { [key: string]: num
     }
   }, [aqiLevel, healthData.heartRate, healthData.oxygenLevel]);
 
-  // Connect to a new smartwatch or health device (stub implementation)
-  const connectDevice = (deviceType: 'GoogleFit' | 'HuaweiHealth' | 'AppleHealth') => {
-    setHealthData({
-      ...healthData,
+  // Connect to a new smartwatch or health device
+  const connectDevice = async (deviceType: 'GoogleFit' | 'HuaweiHealth' | 'AppleHealth') => {
+    // In a real implementation, this would use the device's API
+    // For now, we'll simulate the connection
+    
+    // Generate some realistic health data
+    const newHeartRate = Math.floor(Math.random() * 20) + 65; // 65-85 range
+    const newOxygenLevel = Math.floor(Math.random() * 5) + 95; // 95-99 range
+    const newSteps = Math.floor(Math.random() * 5000) + 2000; // 2000-7000 range
+    const newStressLevel = Math.floor(Math.random() * 5) + 1; // 1-5 range
+    
+    const updatedData = {
+      heartRate: newHeartRate,
+      oxygenLevel: newOxygenLevel,
+      steps: newSteps,
+      stressLevel: newStressLevel,
+      lastUpdated: new Date().toISOString(),
       connected: true,
       deviceType
-    });
+    };
+    
+    setHealthData(updatedData);
+    
+    // Save to database if user is signed in
+    if (isSignedIn && user) {
+      await saveHealthData({
+        heart_rate: newHeartRate,
+        respiratory_rate: newOxygenLevel,
+        steps: newSteps,
+        sleep_hours: 10 - newStressLevel // Convert stress level to sleep hours
+      });
+    }
     
     toast({
       title: "Device Connected",
@@ -147,19 +171,31 @@ export const useHealthData = (aqiLevel: number, pollutants: { [key: string]: num
   };
 
   // Update health data manually (for testing or when no device is connected)
-  const updateHealthData = (newData: Partial<HealthData>) => {
-    setHealthData({
+  const updateHealthData = async (newData: Partial<HealthData>) => {
+    const updatedData = {
       ...healthData,
       ...newData,
       lastUpdated: new Date().toISOString(),
       deviceType: healthData.deviceType || 'Manual'
-    });
+    };
+    
+    setHealthData(updatedData);
+    
+    // Save to database if user is signed in
+    if (isSignedIn && user) {
+      await saveHealthData({
+        heart_rate: updatedData.heartRate,
+        respiratory_rate: updatedData.oxygenLevel,
+        steps: updatedData.steps,
+        sleep_hours: updatedData.stressLevel ? 10 - updatedData.stressLevel : undefined
+      });
+    }
   };
 
   return {
     healthData,
     recommendation,
-    isLoading,
+    isLoading: isLoading || isStorageLoading,
     error,
     connectDevice,
     disconnectDevice,
