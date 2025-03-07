@@ -24,7 +24,17 @@ import { useUser } from '@clerk/clerk-react';
 const Navigation = () => {
   const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { user, isLoaded } = useUser();
+  
+  // Safely attempt to use Clerk's useUser hook
+  let user = null;
+  let isLoaded = false;
+  try {
+    const userResult = useUser();
+    user = userResult.user;
+    isLoaded = userResult.isLoaded;
+  } catch (error) {
+    console.log('Clerk authentication not available');
+  }
 
   const toggleSettings = () => {
     setIsSettingsOpen((prev) => !prev);
