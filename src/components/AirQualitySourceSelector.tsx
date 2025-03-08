@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
-import { DataSource } from "@/hooks/use-air-quality";
+import { DataSource } from "@/hooks/use-air-quality-types";
 
 interface AirQualitySourceSelectorProps {
   source: DataSource;

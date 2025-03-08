@@ -1,5 +1,5 @@
 
-import { AirQualityData } from '@/hooks/use-air-quality';
+import { AirQualityData } from '@/hooks/use-air-quality-types';
 
 interface AirQualitySourceComparisonProps {
   openWeatherData: AirQualityData | null;
