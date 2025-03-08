@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PollutionPrediction } from '@/types/dataset';
+import { PollutionPrediction, PollutionZone, RoutePoint } from '@/types/dataset';
 import { toast } from 'sonner';
 import { useUser } from '@clerk/clerk-react';
 
@@ -35,7 +35,30 @@ export const usePredictions = (datasetId?: string) => {
         throw error;
       }
 
-      return data as PollutionPrediction[];
+      // Transform the JSON data to match the PollutionPrediction interface
+      return (data || []).map(item => {
+        // Parse JSON strings if they're stored as strings in the database
+        const parsedPollutionZones = Array.isArray(item.predicted_pollution_zones) 
+          ? item.predicted_pollution_zones 
+          : [];
+          
+        const parsedRoutes = typeof item.generated_routes === 'object' && item.generated_routes !== null
+          ? item.generated_routes
+          : { standard: [], clean: [], pollution_zones: [] };
+        
+        return {
+          id: item.id,
+          dataset_id: item.dataset_id,
+          predicted_pollution_zones: parsedPollutionZones as PollutionZone[],
+          generated_routes: parsedRoutes as {
+            standard: RoutePoint[];
+            clean: RoutePoint[];
+            pollution_zones: PollutionZone[];
+          },
+          status: item.status as PollutionPrediction['status'],
+          created_at: item.created_at
+        } as PollutionPrediction;
+      });
     },
     enabled: isSignedIn && !!datasetId
   });

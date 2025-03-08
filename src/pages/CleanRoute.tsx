@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { Container } from '@/components/ui/container';
-import { CleanRouteForm } from '@/components/CleanRouteForm';
+import CleanRouteForm from '@/components/CleanRouteForm';
 import { CleanRouteMap } from '@/components/CleanRouteMap';
 import { useSearchParams } from 'react-router-dom';
 
@@ -10,7 +9,7 @@ export default function CleanRoute() {
   const predictionId = searchParams.get('predictionId');
   
   return (
-    <Container>
+    <div className="container mx-auto px-4">
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clean Route</h1>
@@ -25,6 +24,6 @@ export default function CleanRoute() {
           <CleanRouteMap />
         </div>
       </div>
-    </Container>
+    </div>
   );
 }
