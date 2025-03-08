@@ -6,15 +6,12 @@ import { ClerkProvider } from '@clerk/clerk-react';
 
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
-import AirQuality from '@/pages/AirQuality';
-import Map from '@/pages/Map';
-import Chat from '@/pages/Chat';
-import NotFound from '@/pages/NotFound';
-import Navigation from '@/components/Navigation';
-import { cn } from '@/lib/utils';
 import CleanRoute from '@/pages/CleanRoute';
 import SignIn from '@/pages/SignIn';
 import SignUp from '@/pages/SignUp';
+import NotFound from '@/pages/NotFound';
+import Navigation from '@/components/Navigation';
+import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import Datasets from '@/pages/Datasets';
 
@@ -37,11 +34,8 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/air-quality" element={<AirQuality />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/clean-route" element={<CleanRoute />} />
-          <Route path="/chat" element={<Chat />} />
           <Route path="/datasets" element={<Datasets />} />
+          <Route path="/clean-route" element={<CleanRoute />} />
           <Route path="/sign-in/*" element={<SignIn />} />
           <Route path="/sign-up/*" element={<SignUp />} />
           <Route path="*" element={<NotFound />} />

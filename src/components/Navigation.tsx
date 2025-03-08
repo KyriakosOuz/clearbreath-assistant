@@ -3,19 +3,11 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Home, 
-  BarChart, 
-  MapPin, 
-  MessageSquare, 
-  Settings, 
-  Navigation as NavigationIcon,
-  Wind,
+  Database,
+  NavigationIcon,
   LayoutDashboard,
-  CloudSun,
-  MapPin as MapPinIcon,
-  MessageSquare as MessageSquareIcon,
   LogOut,
   LogIn,
-  Database
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -63,6 +55,7 @@ const Navigation = () => {
     navigate('/sign-in');
   };
 
+  // Updated routes - only showing active routes
   const routes = [
     {
       name: "Home",
@@ -75,29 +68,14 @@ const Navigation = () => {
       icon: LayoutDashboard,
     },
     {
-      name: "Air Quality",
-      path: "/air-quality",
-      icon: CloudSun,
-    },
-    {
-      name: "Map",
-      path: "/map",
-      icon: MapPinIcon,
-    },
-    {
-      name: "Clean Route",
-      path: "/clean-route",
-      icon: NavigationIcon,
-    },
-    {
       name: "Datasets",
       path: "/datasets",
       icon: Database,
     },
     {
-      name: "Chat",
-      path: "/chat",
-      icon: MessageSquareIcon,
+      name: "Clean Route",
+      path: "/clean-route",
+      icon: NavigationIcon,
     },
   ];
 
@@ -114,7 +92,7 @@ const Navigation = () => {
       <div className="flex items-center justify-center p-4">
         {collapsed ? (
           <Button variant="ghost" size="icon" onClick={onExpand}>
-            <Settings className="h-5 w-5" />
+            <Database className="h-5 w-5" />
           </Button>
         ) : (
           <div className="flex items-center gap-2">
@@ -130,7 +108,7 @@ const Navigation = () => {
             </Avatar>
             <span className="font-bold">{isLoaded && user ? user.firstName : "Guest"}</span>
             <Button variant="ghost" size="icon" onClick={onCollapse}>
-              <Settings className="h-5 w-5" />
+              <Database className="h-5 w-5" />
             </Button>
           </div>
         )}
