@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Locate, X, BarChart3, Calendar, Loader2 } from 'lucide-react';
+import { MapPin, Locate, X, BarChart3, Calendar, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useRealTimeAirQuality } from '@/hooks/use-real-time-air-quality';
 import { getGoogleMapsApiKey } from '@/lib/google-maps';
+import { LocationPreferenceModal } from './LocationPreferenceModal';
 
 interface AirQualityMapProps {
   className?: string;
@@ -27,7 +28,6 @@ interface ForecastDataPoint {
   isPrediction: boolean;
 }
 
-// Function to get AQI color
 const getAQIColor = (aqi: number): string => {
   if (aqi <= 50) return 'bg-aqi-good';
   if (aqi <= 100) return 'bg-aqi-moderate';
@@ -44,17 +44,14 @@ const getAQITextColor = (aqi: number): string => {
   return 'text-purple-600';
 };
 
-// Generate forecast data based on current AQI
 const generateForecastData = (currentAqi: number): ForecastDataPoint[] => {
   const now = new Date();
   const forecast: ForecastDataPoint[] = [];
   
-  // Past data (not predictions)
   for (let i = -3; i <= 0; i++) {
     const hour = new Date(now);
     hour.setHours(now.getHours() + i);
     
-    // Random variation +/- 15% from current AQI for historical data
     const variation = i === 0 ? 0 : (Math.random() * 0.3) - 0.15;
     const aqi = Math.round(currentAqi * (1 + variation));
     
@@ -66,30 +63,20 @@ const generateForecastData = (currentAqi: number): ForecastDataPoint[] => {
     });
   }
   
-  // Future predictions
   for (let i = 1; i <= 5; i++) {
     const hour = new Date(now);
     hour.setHours(now.getHours() + i);
     
-    // For predictions, we'll create a pattern:
-    // If current time is morning (6-12), AQI gets worse in afternoon
-    // If current time is afternoon (12-18), AQI improves in evening
-    // If current time is evening/night, AQI improves overnight
-    const currentHour = now.getHours();
     let trendFactor = 0;
     
-    if (currentHour >= 6 && currentHour < 12) {
-      // Morning -> afternoon: worsen
+    if (now.getHours() >= 6 && now.getHours() < 12) {
       trendFactor = 0.1 * i;
-    } else if (currentHour >= 12 && currentHour < 18) {
-      // Afternoon -> evening: improve
+    } else if (now.getHours() >= 12 && now.getHours() < 18) {
       trendFactor = -0.07 * i;
     } else {
-      // Evening/night -> overnight: improve more
       trendFactor = -0.12 * i;
     }
     
-    // Add some randomness to the trend
     const randomness = (Math.random() * 0.1) - 0.05;
     const aqi = Math.max(10, Math.round(currentAqi * (1 + trendFactor + randomness)));
     
@@ -105,8 +92,9 @@ const generateForecastData = (currentAqi: number): ForecastDataPoint[] => {
 };
 
 const AirQualityMap = ({ className }: AirQualityMapProps) => {
-  // Get real-time air quality data
-  const { data: airQualityData, isLoading: isAirQualityLoading, error: airQualityError, refreshData } = useRealTimeAirQuality();
+  const { data: airQualityData, isLoading: isAirQualityLoading, error: airQualityError, refreshData, setPreferredLocation } = useRealTimeAirQuality(
+    undefined, undefined, { disableNotifications: true }
+  );
   
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
@@ -116,9 +104,9 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
   const [forecastData, setForecastData] = useState<ForecastDataPoint[]>([]);
   const [nearbyStations, setNearbyStations] = useState<MapLocation[]>([]);
   const [mapApiKey, setMapApiKey] = useState<string | null>(null);
+  const [showLocationPreferenceModal, setShowLocationPreferenceModal] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   
-  // Get user's location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -130,7 +118,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
         },
         () => {
           toast.error("Could not get your location. Using default location.");
-          // Default to Thessaloniki if geolocation fails
           setUserLocation({ lat: 40.63, lng: 22.95 });
         }
       );
@@ -140,7 +127,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
     }
   }, []);
   
-  // Get Google Maps API key
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
@@ -154,7 +140,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
     fetchApiKey();
   }, []);
   
-  // Generate nearby stations based on the actual air quality data
   useEffect(() => {
     if (airQualityData && userLocation) {
       const mainStation: MapLocation = {
@@ -165,19 +150,15 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
         lng: userLocation.lng
       };
       
-      // Generate some additional nearby stations with variation in AQI
       const nearby: MapLocation[] = [mainStation];
       
-      // Add 4-6 additional stations around the main one
       const numStations = 4 + Math.floor(Math.random() * 3);
       const locationLabels = ['City Center', 'Eastern District', 'Harbor Area', 'Western Suburbs', 'Northern Hills', 'Industrial Zone', 'University Area', 'Park District'];
       
       for (let i = 0; i < numStations; i++) {
-        // Random offset from user location (0.01-0.05 degrees, roughly 1-5 km)
         const latOffset = (Math.random() * 0.04 + 0.01) * (Math.random() > 0.5 ? 1 : -1);
         const lngOffset = (Math.random() * 0.04 + 0.01) * (Math.random() > 0.5 ? 1 : -1);
         
-        // Vary the AQI by -30% to +50% from the main reading
         const aqiVariation = airQualityData.aqi * (0.7 + Math.random() * 0.8);
         
         nearby.push({
@@ -193,7 +174,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
     }
   }, [airQualityData, userLocation]);
   
-  // Simulate map loading
   useEffect(() => {
     if (userLocation) {
       const timer = setTimeout(() => {
@@ -207,7 +187,7 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
   const handleLocationSelect = (location: MapLocation) => {
     setSelectedLocation(location);
   };
-
+  
   const fetchAIPrediction = async () => {
     if (!selectedLocation) return;
     
@@ -215,17 +195,14 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
     setShowForecast(true);
     
     try {
-      // Generate forecast data based on the selected location's AQI
       setTimeout(() => {
         const generatedForecast = generateForecastData(selectedLocation.aqi);
         setForecastData(generatedForecast);
         setIsForecastLoading(false);
         
-        // Show notification about high pollution periods
         const highPollutionPeriods = generatedForecast.filter(point => point.aqi > 70 && point.isPrediction);
         
         if (highPollutionPeriods.length > 0) {
-          // Fix: Use toast directly instead of passing an object with title property
           toast.error(`High pollution levels predicted at ${highPollutionPeriods[0].hour}. Consider staying indoors.`);
         }
       }, 2000);
@@ -233,6 +210,17 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
       console.error("Error generating forecast data:", error);
       setIsForecastLoading(false);
       toast.error("Failed to generate pollution forecast");
+    }
+  };
+  
+  const handleSetPreferredLocation = () => {
+    if (selectedLocation) {
+      setPreferredLocation(selectedLocation.name, selectedLocation.lat, selectedLocation.lng);
+      setShowLocationPreferenceModal(false);
+      
+      toast.success(`${selectedLocation.name} set as your preferred location`, {
+        description: "You'll receive air quality alerts only for this location",
+      });
     }
   };
   
@@ -260,15 +248,13 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
               ref={mapRef}
               className="absolute inset-0 bg-blue-50 transition-opacity duration-1000 opacity-100"
             >
-              {/* Map visualization using Google Static Maps API */}
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50" 
                 style={{
                   backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${userLocation.lat},${userLocation.lng}&zoom=12&size=800x500&scale=2&style=feature:all%7Celement:all%7Cvisibility:on%7Ccolor:0xf2f2f2&style=feature:landscape%7Celement:geometry%7Ccolor:0xf2f2f2&style=feature:poi%7Celement:all%7Cvisibility:off&style=feature:road%7Celement:all%7Csaturation:-100%7Clightness:45&style=feature:road.highway%7Celement:all%7Cvisibility:simplified&style=feature:road.arterial%7Celement:labels.icon%7Cvisibility:off&style=feature:transit%7Celement:all%7Cvisibility:off&style=feature:water%7Celement:all%7Ccolor:0xcdcdcd&key=${mapApiKey}')`
                 }}
               />
-
-              {/* Location pins */}
+              
               {nearbyStations.map((location) => (
                 <motion.div
                   key={location.id}
@@ -295,7 +281,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
               ))}
             </div>
             
-            {/* Location info overlay */}
             {selectedLocation && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -309,15 +294,27 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                     <p className="text-sm">
                       AQI: <span className={getAQITextColor(selectedLocation.aqi)}>{selectedLocation.aqi}</span>
                     </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2 flex items-center gap-1"
-                      onClick={fetchAIPrediction}
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      <span>Show Forecast</span>
-                    </Button>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={fetchAIPrediction}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        <span>Show Forecast</span>
+                      </Button>
+                      
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={() => setShowLocationPreferenceModal(true)}
+                      >
+                        <Check className="h-4 w-4" />
+                        <span>Set as Preferred</span>
+                      </Button>
+                    </div>
                   </div>
                   <button
                     onClick={() => setSelectedLocation(null)}
@@ -329,7 +326,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
               </motion.div>
             )}
             
-            {/* Map controls */}
             <div className="absolute right-4 top-4 flex flex-col gap-2">
               <Button 
                 size="icon" 
@@ -356,7 +352,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
         )}
       </div>
       
-      {/* AI Forecast Overlay */}
       {showForecast && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -416,7 +411,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                       ))}
                     </div>
                     
-                    {/* Separator line between actual and predicted data */}
                     <div className="absolute inset-y-0 left-[37.5%] border-l border-dashed border-muted-foreground/30" />
                     <div className="absolute top-0 left-[37.5%] -translate-x-1/2 bg-muted/90 text-xs px-2 py-1 rounded">
                       Now
@@ -436,7 +430,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                   <CardContent>
                     <ul className="space-y-2 text-sm">
                       {(() => {
-                        // Generate insights based on the actual forecast data
                         const insights = [];
                         const maxAqi = Math.max(...forecastData.filter(d => d.isPrediction).map(d => d.aqi));
                         const minAqi = Math.min(...forecastData.filter(d => d.isPrediction).map(d => d.aqi));
@@ -471,7 +464,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                           );
                         }
                         
-                        // Add a basic insight if we don't have any
                         if (insights.length === 0) {
                           insights.push(
                             <li key="stable" className="flex items-start">
@@ -481,7 +473,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                           );
                         }
                         
-                        // Always add data source info
                         insights.push(
                           <li key="source" className="flex items-start">
                             <div className="h-2 w-2 mt-1.5 mr-2 rounded-full bg-gray-500" />
@@ -502,7 +493,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                   <CardContent>
                     <ul className="space-y-2 text-sm">
                       {(() => {
-                        // Generate recommendations based on forecast data
                         const recommendations = [];
                         const maxAqi = Math.max(...forecastData.filter(d => d.isPrediction).map(d => d.aqi));
                         const minAqi = Math.min(...forecastData.filter(d => d.isPrediction).map(d => d.aqi));
@@ -543,7 +533,6 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
                           );
                         }
                         
-                        // Basic recommendation for sensitive groups
                         recommendations.push(
                           <li key="sensitive" className="flex items-start">
                             <div className="h-2 w-2 mt-1.5 mr-2 rounded-full bg-purple-500" />
@@ -573,6 +562,13 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
           )}
         </motion.div>
       )}
+      
+      <LocationPreferenceModal 
+        isOpen={showLocationPreferenceModal}
+        onClose={() => setShowLocationPreferenceModal(false)}
+        onConfirm={handleSetPreferredLocation}
+        locationName={selectedLocation?.name || ''}
+      />
     </div>
   );
 };

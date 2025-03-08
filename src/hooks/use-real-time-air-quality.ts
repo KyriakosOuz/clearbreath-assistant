@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -58,22 +59,69 @@ const formatUpdatedTime = (timestamp: string | number): string => {
   return `${diffDays} days ago`;
 };
 
-export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => {
+// Persistent storage for user preferences
+const saveUserPreferredLocation = (locationName: string, lat: number, lon: number) => {
+  try {
+    localStorage.setItem('airQualityPreferredLocation', JSON.stringify({ name: locationName, lat, lon }));
+  } catch (e) {
+    console.error('Error saving location to localStorage:', e);
+  }
+};
+
+const getUserPreferredLocation = () => {
+  try {
+    const savedLocation = localStorage.getItem('airQualityPreferredLocation');
+    if (savedLocation) {
+      return JSON.parse(savedLocation);
+    }
+  } catch (e) {
+    console.error('Error reading location from localStorage:', e);
+  }
+  return null;
+};
+
+interface UseRealTimeAirQualityOptions {
+  disableNotifications?: boolean;
+  locationName?: string;
+}
+
+export const useRealTimeAirQuality = (
+  latitude?: number, 
+  longitude?: number, 
+  options: UseRealTimeAirQualityOptions = {}
+) => {
   const [data, setData] = useState<AirQualityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const { disableNotifications = false, locationName } = options;
 
   const fetchAirQuality = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Default to Thessaloniki if no coordinates provided
-      const lat = latitude || 40.6401;
-      const lon = longitude || 22.9444;
+      // Check for user preferred location first
+      const savedLocation = getUserPreferredLocation();
       
-      console.log(`Fetching air quality data for: ${lat}, ${lon}`);
+      // Default to Thessaloniki if no coordinates or saved location
+      let lat = latitude;
+      let lon = longitude;
+      let location = locationName;
+      
+      if (!lat || !lon) {
+        if (savedLocation) {
+          lat = savedLocation.lat;
+          lon = savedLocation.lon;
+          location = savedLocation.name;
+        } else {
+          lat = 40.6401;
+          lon = 22.9444;
+          location = 'Thessaloniki, Greece';
+        }
+      }
+      
+      console.log(`Fetching air quality data for: ${location || ''} (${lat}, ${lon})`);
       
       // Call the Supabase Edge Function
       const { data: waqi, error: waqiError } = await supabase.functions.invoke('waqi-air-quality', {
@@ -93,7 +141,7 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
       // Parse and format the data
       const aqiData: AirQualityData = {
         aqi: waqi.data.aqi,
-        location: waqi.data.city?.name || 'Unknown Location',
+        location: waqi.data.city?.name || location || 'Unknown Location',
         updatedAt: formatUpdatedTime(waqi.data.time?.v || Date.now()),
         pollutants: {
           'PM2.5': waqi.data.iaqi?.pm25?.v,
@@ -115,8 +163,16 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
       setData(aqiData);
       setLastRefresh(Date.now());
       
-      // Show toast for unhealthy air quality
-      if (aqiData.category === 'unhealthy' || aqiData.category === 'hazardous' || aqiData.category === 'severe') {
+      // If this is a user-selected location or a saved one, update the storage
+      if (locationName && lat && lon) {
+        saveUserPreferredLocation(locationName, lat, lon);
+      } else if (aqiData.location && lat && lon && !disableNotifications) {
+        saveUserPreferredLocation(aqiData.location, lat, lon);
+      }
+      
+      // Only show notifications for unhealthy air if this is the preferred location and notifications aren't disabled
+      if (!disableNotifications && 
+          (aqiData.category === 'unhealthy' || aqiData.category === 'hazardous' || aqiData.category === 'severe')) {
         toast.warning(`Air quality alert for ${aqiData.location}`, {
           description: `AQI is at ${aqiData.aqi} (${aqiData.category}). Consider limiting outdoor activities.`,
           duration: 6000,
@@ -128,9 +184,11 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
       
       // If there's no data yet, set fallback mock data
       if (!data) {
+        const savedLocation = getUserPreferredLocation();
+        
         setData({
           aqi: 42,
-          location: 'Thessaloniki, City Center',
+          location: savedLocation?.name || 'Thessaloniki, City Center',
           updatedAt: '2 minutes ago',
           pollutants: {
             'PM2.5': 12,
@@ -142,20 +200,28 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
         });
       }
       
-      // Show error toast
-      toast.error('Error fetching air quality data', {
-        description: err instanceof Error ? err.message : 'Please try again later',
-        duration: 5000,
-      });
+      // Show error toast (but not for mock data scenario)
+      if (data) {
+        toast.error('Error fetching air quality data', {
+          description: err instanceof Error ? err.message : 'Please try again later',
+          duration: 5000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [latitude, longitude, data]);
+  }, [latitude, longitude, data, disableNotifications, locationName]);
   
   // Force a refresh function that can be called manually
   const refreshData = useCallback(() => {
     fetchAirQuality();
   }, [fetchAirQuality]);
+  
+  // Set a user's preferred location
+  const setPreferredLocation = useCallback((name: string, lat: number, lon: number) => {
+    saveUserPreferredLocation(name, lat, lon);
+    refreshData();
+  }, [refreshData]);
   
   useEffect(() => {
     // Fetch immediately on mount or when coordinates change
@@ -172,6 +238,7 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
     isLoading, 
     error,
     lastRefresh,
-    refreshData 
+    refreshData,
+    setPreferredLocation 
   };
 };

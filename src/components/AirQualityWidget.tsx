@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, MapPin, Clock, Info, Database } from 'lucide-react';
@@ -82,6 +81,13 @@ const AirQualityWidget = ({
             <div className="flex items-center text-sm text-muted-foreground">
               <MapPin className="mr-1 h-3.5 w-3.5" />
               <span>{data?.city || 'Unknown Location'}</span>
+              
+              {localStorage.getItem('airQualityPreferredLocation') && 
+               JSON.parse(localStorage.getItem('airQualityPreferredLocation') || '{}').name === data?.city && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  Preferred
+                </span>
+              )}
             </div>
           )}
         </div>
