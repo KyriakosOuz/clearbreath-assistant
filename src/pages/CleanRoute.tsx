@@ -4,23 +4,46 @@ import CleanRouteForm from '@/components/CleanRouteForm';
 import { CleanRouteMap } from '@/components/CleanRouteMap';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CleanRoute() {
   const [searchParams, setSearchParams] = useSearchParams();
   const predictionId = searchParams.get('predictionId');
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleRouteSelected = (origin: string, destination: string, transportMode: string) => {
+  const handleRouteSelected = async (origin: string, destination: string, transportMode: string) => {
     setIsLoading(true);
     
-    // Simulate route processing
-    setTimeout(() => {
-      toast.success('Route generated successfully');
+    try {
+      // Call the clean-route-ai edge function to generate a route
+      const { data, error } = await supabase.functions.invoke('clean-route-ai', {
+        body: { 
+          origin,
+          destination,
+          transportMode
+        }
+      });
+      
+      if (error) {
+        console.error('Error generating route:', error);
+        toast.error('Failed to generate route');
+        return;
+      }
+      
+      if (data && data.prediction_id) {
+        toast.success('Route generated successfully');
+        
+        // Update the URL with the prediction ID
+        setSearchParams({ predictionId: data.prediction_id });
+      } else {
+        toast.error('No route data returned');
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
       setIsLoading(false);
-    }, 1500);
-    
-    // In a real implementation, you would call an API to generate the route
-    console.log('Route selected:', { origin, destination, transportMode });
+    }
   };
   
   return (
