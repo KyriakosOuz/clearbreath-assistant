@@ -17,8 +17,27 @@ export interface AirQualityDataset {
 export interface PollutionPrediction {
   id: string;
   dataset_id: string;
-  predicted_pollution_zones?: any;
-  generated_routes?: any;
+  predicted_pollution_zones?: PollutionZone[];
+  generated_routes?: {
+    standard: RoutePoint[];
+    clean: RoutePoint[];
+    pollution_zones: PollutionZone[];
+  };
   status: 'Pending' | 'Processing' | 'Completed' | 'Failed';
   created_at: string;
+}
+
+export interface PollutionZone {
+  center: {
+    lat: number;
+    lng: number;
+  };
+  radius: number;
+  value: number;
+  points: number;
+}
+
+export interface RoutePoint {
+  lat: number;
+  lng: number;
 }

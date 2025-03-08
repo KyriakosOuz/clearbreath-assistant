@@ -1,15 +1,17 @@
 
 import { useState } from 'react';
-import { FileSpreadsheet, Trash2, RefreshCw, Eye, Calendar, Layers, ArrowUpDown } from 'lucide-react';
+import { FileSpreadsheet, Trash2, RefreshCw, Eye, Calendar, Layers, ArrowUpDown, Route, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AirQualityDataset } from '@/types/dataset';
 import { useDatasets } from '@/hooks/use-datasets';
+import { usePredictions } from '@/hooks/use-predictions';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PredictionCard, PredictionCardSkeleton } from './PredictionCard';
 
 // Helper to format file size
 const formatFileSize = (bytes: number): string => {
@@ -41,8 +43,16 @@ interface DatasetCardProps {
 
 export function DatasetCard({ dataset, onView }: DatasetCardProps) {
   const { deleteDataset, reprocessDataset } = useDatasets();
+  const { 
+    predictions, 
+    isLoading: isLoadingPredictions, 
+    generatePrediction, 
+    isProcessing 
+  } = usePredictions(dataset.id);
+  
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPredictions, setShowPredictions] = useState(false);
   
   const handleReprocess = async () => {
     setIsReprocessing(true);
@@ -51,6 +61,10 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
     } finally {
       setIsReprocessing(false);
     }
+  };
+  
+  const handleGeneratePrediction = async () => {
+    await generatePrediction(dataset.id);
   };
   
   const handleDelete = () => {
@@ -85,7 +99,7 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
             <Calendar className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">Uploaded: </span>
             <span className="ml-1 font-medium">
-              {format(new Date(dataset.upload_date), 'MMM dd, yyyy')}
+              {format(new Date(dataset.created_at), 'MMM dd, yyyy')}
             </span>
           </div>
           
@@ -104,9 +118,17 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
               {dataset.column_names ? dataset.column_names.length : 'Unknown'}
             </span>
           </div>
+          
+          <div className="flex items-center text-sm">
+            <Route className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">Predictions: </span>
+            <span className="ml-1 font-medium">
+              {isLoadingPredictions ? '...' : predictions.length}
+            </span>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-1 flex justify-between">
+      <CardFooter className="pt-1 flex flex-wrap gap-2">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" disabled={dataset.status !== 'Completed'}>
@@ -155,7 +177,70 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
           </DialogContent>
         </Dialog>
         
-        <div className="flex space-x-2">
+        <Dialog open={showPredictions} onOpenChange={setShowPredictions}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={dataset.status !== 'Completed' || isLoadingPredictions}
+            >
+              <BarChart className="mr-2 h-3.5 w-3.5" />
+              {isLoadingPredictions ? 'Loading...' : `Predictions (${predictions.length})`}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Predictions for: {dataset.original_file_name}</DialogTitle>
+              <DialogDescription>
+                Generate new predictions or view existing ones
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="my-4">
+              <Button 
+                onClick={handleGeneratePrediction} 
+                disabled={isProcessing || dataset.status !== 'Completed'}
+                className="w-full"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Route className="mr-2 h-4 w-4" />
+                    Generate New Prediction
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <ScrollArea className="h-96">
+              {isLoadingPredictions ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <PredictionCardSkeleton />
+                  <PredictionCardSkeleton />
+                </div>
+              ) : predictions.length === 0 ? (
+                <div className="text-center p-8 border rounded-lg bg-muted/10">
+                  <h3 className="text-lg font-medium">No predictions yet</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Generate your first prediction to get started.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {predictions.map(prediction => (
+                    <PredictionCard key={prediction.id} prediction={prediction} />
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+        
+        <div className="flex ml-auto space-x-2">
           <Button 
             variant="outline" 
             size="sm"
