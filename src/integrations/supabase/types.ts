@@ -132,28 +132,40 @@ export type Database = {
       }
       pollution_predictions: {
         Row: {
+          correlations: Json | null
           created_at: string
           dataset_id: string
           generated_routes: Json | null
           id: string
+          mlinsights: Json | null
           predicted_pollution_zones: Json | null
+          predictions: Json | null
           status: string
+          trends: Json | null
         }
         Insert: {
+          correlations?: Json | null
           created_at?: string
           dataset_id: string
           generated_routes?: Json | null
           id?: string
+          mlinsights?: Json | null
           predicted_pollution_zones?: Json | null
+          predictions?: Json | null
           status?: string
+          trends?: Json | null
         }
         Update: {
+          correlations?: Json | null
           created_at?: string
           dataset_id?: string
           generated_routes?: Json | null
           id?: string
+          mlinsights?: Json | null
           predicted_pollution_zones?: Json | null
+          predictions?: Json | null
           status?: string
+          trends?: Json | null
         }
         Relationships: [
           {
