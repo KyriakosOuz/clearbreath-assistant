@@ -1,6 +1,6 @@
 
 import { useState, useRef } from 'react';
-import { Upload, FileUp, X, RefreshCcw } from 'lucide-react';
+import { Upload, FileUp, X, RefreshCcw, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useDatasets } from '@/hooks/use-datasets';
@@ -55,8 +55,8 @@ export function DatasetUploadForm() {
   const handleFileUpload = async (file: File) => {
     // Validate file type
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!fileExtension || !['csv', 'json'].includes(fileExtension)) {
-      toast.error('Only CSV and JSON files are supported');
+    if (!fileExtension || !['csv', 'json', 'xlsx'].includes(fileExtension)) {
+      toast.error('Only CSV, JSON, and XLSX files are supported');
       return;
     }
     
@@ -98,7 +98,7 @@ export function DatasetUploadForm() {
           ref={inputRef}
           type="file"
           className="hidden"
-          accept=".csv,.json"
+          accept=".csv,.json,.xlsx"
           onChange={handleChange}
           disabled={isUploading}
         />
@@ -110,7 +110,7 @@ export function DatasetUploadForm() {
           <div className="space-y-2">
             <h3 className="font-medium">Upload your air quality dataset</h3>
             <p className="text-sm text-muted-foreground">
-              Drag and drop your CSV or JSON file, or click to browse
+              Drag and drop your CSV, JSON, or XLSX file, or click to browse
             </p>
             <p className="text-xs text-muted-foreground">
               Max file size: 10MB

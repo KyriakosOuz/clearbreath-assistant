@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, FileText, BarChart2 } from 'lucide-react';
+import { Search, FileText, BarChart2, FileSpreadsheet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/DataTable';
 import { toast } from 'sonner';
@@ -61,6 +61,10 @@ export function DatasetViewer({ datasetId }: DatasetViewerProps) {
           parsedData = JSON.parse(text);
         } else if (dataset.file_type === 'csv') {
           parsedData = parseCSV(text);
+        } else if (dataset.file_type === 'xlsx') {
+          // For XLSX files, we'll use the data_preview from the dataset
+          // as parsing XLSX requires the xlsx library which we can't use in the browser
+          parsedData = dataset.data_preview || [];
         } else {
           throw new Error(`Unsupported file type: ${dataset.file_type}`);
         }
@@ -141,6 +145,20 @@ export function DatasetViewer({ datasetId }: DatasetViewerProps) {
     };
   }, [datasetContent]);
 
+  // Get file type icon
+  const getFileTypeIcon = () => {
+    if (!dataset) return <FileText className="h-4 w-4" />;
+    
+    switch (dataset.file_type) {
+      case 'xlsx':
+        return <FileSpreadsheet className="h-4 w-4" />;
+      case 'csv':
+      case 'json':
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
   // Handle loading and error states
   if (isLoading) {
     return <DatasetViewerSkeleton />;
@@ -160,7 +178,8 @@ export function DatasetViewer({ datasetId }: DatasetViewerProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {getFileTypeIcon()}
             Dataset: {dataset.original_file_name}
           </CardTitle>
           <CardDescription>

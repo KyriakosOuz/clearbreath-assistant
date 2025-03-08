@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { DatasetList } from '@/components/DatasetList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, Upload, Server, Search } from 'lucide-react';
+import { Database, Upload, Server, Search, FileSpreadsheet } from 'lucide-react';
 import { DatasetViewer } from '@/components/DatasetViewer';
 
 export default function Datasets() {
@@ -50,7 +50,7 @@ export default function Datasets() {
             <CardHeader>
               <CardTitle>Upload Dataset</CardTitle>
               <CardDescription>
-                Upload your air quality dataset in CSV or JSON format. Once uploaded, the system will automatically process it.
+                Upload your air quality dataset in CSV, JSON, or XLSX format. Once uploaded, the system will automatically process it.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -98,6 +98,17 @@ export default function Datasets() {
   ...
 ]`}
                     </pre>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium">XLSX Format</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your Excel spreadsheet should have data in the first sheet with headers in the first row, similar to CSV format.
+                  </p>
+                  <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Each column should be properly labeled and include the same data types as the CSV format.
                   </div>
                 </div>
                 

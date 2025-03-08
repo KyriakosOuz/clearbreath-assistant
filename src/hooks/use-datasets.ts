@@ -54,8 +54,8 @@ export const useDatasets = () => {
 
       // Validate file type
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      if (!fileExtension || !['csv', 'json'].includes(fileExtension)) {
-        toast.error('Only CSV and JSON files are supported');
+      if (!fileExtension || !['csv', 'json', 'xlsx'].includes(fileExtension)) {
+        toast.error('Only CSV, JSON, and XLSX files are supported');
         return null;
       }
 

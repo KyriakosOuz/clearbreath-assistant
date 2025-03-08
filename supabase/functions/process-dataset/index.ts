@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
 // Simple ML-like processing function (in a real scenario, this would use actual ML libraries)
 function processDataset(data: any[]) {
@@ -158,6 +159,22 @@ function parseJSON(jsonContent: string) {
   }
 }
 
+// Parse XLSX data
+function parseXLSX(fileData: ArrayBuffer) {
+  try {
+    const workbook = XLSX.read(new Uint8Array(fileData), { type: 'array' });
+    const sheetName = workbook.SheetNames[0]; // Get the first sheet
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON with headers
+    const data = XLSX.utils.sheet_to_json(worksheet);
+    return data;
+  } catch (error) {
+    console.error("Error parsing XLSX:", error);
+    return [];
+  }
+}
+
 serve(async (req) => {
   try {
     // Get the request body
@@ -227,14 +244,18 @@ serve(async (req) => {
       );
     }
     
-    // Parse the file content
-    const fileContent = await fileData.text();
+    // Parse the file content based on file type
     let parsedData: any[] = [];
     
     if (dataset.file_type === 'csv') {
+      const fileContent = await fileData.text();
       parsedData = parseCSV(fileContent);
     } else if (dataset.file_type === 'json') {
+      const fileContent = await fileData.text();
       parsedData = parseJSON(fileContent);
+    } else if (dataset.file_type === 'xlsx') {
+      const fileArrayBuffer = await fileData.arrayBuffer();
+      parsedData = parseXLSX(fileArrayBuffer);
     }
     
     if (parsedData.length === 0) {
