@@ -7,7 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 import { AirQualityDataset } from '@/types/dataset';
 
-export function DatasetList() {
+interface DatasetListProps {
+  onViewDataset?: (datasetId: string) => void;
+}
+
+export function DatasetList({ onViewDataset }: DatasetListProps) {
   const { datasets, isLoading, refetchDatasets } = useDatasets();
   const [activeTab, setActiveTab] = useState('all');
   
@@ -95,7 +99,11 @@ export function DatasetList() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDatasets.map(dataset => (
-                <DatasetCard key={dataset.id} dataset={dataset} />
+                <DatasetCard 
+                  key={dataset.id} 
+                  dataset={dataset} 
+                  onView={onViewDataset}
+                />
               ))}
             </div>
           )}

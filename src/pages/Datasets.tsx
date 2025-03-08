@@ -5,11 +5,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { DatasetList } from '@/components/DatasetList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, Upload, Server } from 'lucide-react';
+import { Database, Upload, Server, Search } from 'lucide-react';
+import { DatasetViewer } from '@/components/DatasetViewer';
 
 export default function Datasets() {
   useAuthProtect();
   const [activeTab, setActiveTab] = useState('upload');
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  
+  const handleViewDataset = (datasetId: string) => {
+    setSelectedDatasetId(datasetId);
+    setActiveTab('view');
+  };
   
   return (
     <div className="container max-w-6xl py-6 space-y-8">
@@ -30,6 +37,12 @@ export default function Datasets() {
             <Database className="h-4 w-4" />
             Manage Datasets
           </TabsTrigger>
+          {selectedDatasetId && (
+            <TabsTrigger value="view" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              View Dataset
+            </TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="upload" className="space-y-6">
@@ -107,7 +120,19 @@ export default function Datasets() {
         </TabsContent>
         
         <TabsContent value="manage">
-          <DatasetList />
+          <DatasetList onViewDataset={handleViewDataset} />
+        </TabsContent>
+
+        <TabsContent value="view">
+          {selectedDatasetId ? (
+            <DatasetViewer datasetId={selectedDatasetId} />
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">Select a dataset to view its contents.</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
