@@ -4,6 +4,7 @@ import { MapPin, Navigation, ArrowRight, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getGoogleMapsApiKey } from '@/lib/google-maps';
 
 interface CleanRouteMapProps {
   className?: string;
@@ -30,7 +31,6 @@ interface Route {
   isCleanest: boolean;
 }
 
-// Mock routes data
 const mockRoutes: Route[] = [
   { 
     id: '1', 
@@ -76,7 +76,6 @@ const mockRoutes: Route[] = [
   }
 ];
 
-// Function to get color based on pollution exposure
 const getPollutionColor = (level: number): string => {
   if (level < 40) return 'bg-green-500';
   if (level < 60) return 'bg-yellow-500';
@@ -88,34 +87,46 @@ const CleanRouteMap = ({ className, origin, destination, transportMode, pollutio
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [showRoutes, setShowRoutes] = useState(false);
+  const [mapApiKey, setMapApiKey] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Simulate map loading
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMapLoaded(true);
-    }, 1000);
+    const fetchApiKey = async () => {
+      try {
+        const key = await getGoogleMapsApiKey();
+        setMapApiKey(key);
+      } catch (error) {
+        console.error("Failed to load Google Maps API key:", error);
+      }
+    };
     
-    return () => clearTimeout(timer);
+    fetchApiKey();
   }, []);
+  
+  useEffect(() => {
+    if (mapApiKey) {
+      const timer = setTimeout(() => {
+        setIsMapLoaded(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [mapApiKey]);
 
-  // Show routes after map loads
   useEffect(() => {
     if (isMapLoaded) {
       const timer = setTimeout(() => {
         setShowRoutes(true);
-        setSelectedRoute(mockRoutes[0]); // Select clean route by default
+        setSelectedRoute(mockRoutes[0]);
       }, 500);
       
       return () => clearTimeout(timer);
     }
   }, [isMapLoaded]);
   
-  // Simulate pollution alert during travel
   useEffect(() => {
     if (selectedRoute) {
       const timer = setTimeout(() => {
-        // Random chance of pollution alert
         if (Math.random() > 0.5) {
           toast({
             title: "Real-time Alert",
@@ -123,7 +134,7 @@ const CleanRouteMap = ({ className, origin, destination, transportMode, pollutio
             variant: "destructive",
           });
         }
-      }, 15000); // After 15 seconds
+      }, 15000);
       
       return () => clearTimeout(timer);
     }
@@ -138,87 +149,84 @@ const CleanRouteMap = ({ className, origin, destination, transportMode, pollutio
           </div>
         )}
         
-        {/* This would be replaced with an actual map integration */}
         <div 
           className={cn(
             'absolute inset-0 bg-blue-50 transition-opacity duration-1000',
             isMapLoaded ? 'opacity-100' : 'opacity-0'
           )}
         >
-          {/* Map visualization placeholder */}
-          <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=40.63,22.95&zoom=13&size=800x500&scale=2&style=feature:all%7Celement:all%7Cvisibility:on%7Ccolor:0xf2f2f2&style=feature:landscape%7Celement:geometry%7Ccolor:0xf2f2f2&style=feature:poi%7Celement:all%7Cvisibility:off&style=feature:road%7Celement:all%7Csaturation:-100%7Clightness:45&style=feature:road.highway%7Celement:all%7Cvisibility:simplified&style=feature:road.arterial%7Celement:labels.icon%7Cvisibility:off&style=feature:transit%7Celement:all%7Cvisibility:off&style=feature:water%7Celement:all%7Ccolor:0xcdcdcd&key=DEMO_KEY')] bg-cover bg-center bg-no-repeat opacity-70" />
-
-          {/* Route lines */}
-          {showRoutes && mockRoutes.map((route) => {
-            const isSelected = selectedRoute?.id === route.id;
-            
-            return (
-              <div 
-                key={route.id}
-                className={cn(
-                  'absolute inset-0 pointer-events-none transition-opacity duration-500',
-                  isSelected ? 'opacity-100' : 'opacity-30'
-                )}
-              >
-                {/* Simulated route path */}
-                <svg className="absolute inset-0 w-full h-full">
-                  <path
-                    d={`M ${(route.points[0].lng - 22.9) * 500 + 150} ${(40.66 - route.points[0].lat) * 500 + 100} 
-                        C ${(route.points[1].lng - 22.9) * 500 + 150} ${(40.66 - route.points[1].lat) * 500 + 100},
-                          ${(route.points[2].lng - 22.9) * 500 + 150} ${(40.66 - route.points[2].lat) * 500 + 100},
-                          ${(route.points[3].lng - 22.9) * 500 + 150} ${(40.66 - route.points[3].lat) * 500 + 100}`}
-                    stroke={route.isCleanest ? "#22c55e" : "#f97316"}
-                    strokeWidth={isSelected ? 5 : 3}
-                    strokeLinecap="round"
-                    strokeDasharray={route.isCleanest ? "0" : "10,5"}
-                    fill="none"
-                  />
-                </svg>
-                
-                {/* Pollution zones */}
-                {route.id === '2' && isSelected && (
-                  <div className="absolute top-[40%] left-[50%] h-16 w-16 rounded-full bg-red-500/20 animate-pulse" />
-                )}
-                {route.id === '3' && isSelected && (
-                  <div className="absolute top-[45%] left-[48%] h-20 w-20 rounded-full bg-red-500/20 animate-pulse" />
-                )}
-                
-                {/* Start marker */}
-                <div className="absolute bottom-[30%] left-[30%] transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 border-2 border-white shadow-md">
-                    <MapPin className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                
-                {/* End marker */}
-                <div className="absolute top-[20%] right-[40%] transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 border-2 border-white shadow-md">
-                    <Navigation className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                
-                {/* Pollution hotspots */}
-                {isSelected && (
-                  <>
-                    <div className="absolute bottom-[40%] right-[40%] transform -translate-x-1/2 -translate-y-1/2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/30 border border-red-500">
-                        <AlertTriangle className="h-3 w-3 text-red-600" />
-                      </div>
+          <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70" 
+            style={{
+              backgroundImage: mapApiKey ? 
+                `url('https://maps.googleapis.com/maps/api/staticmap?center=40.63,22.95&zoom=13&size=800x500&scale=2&style=feature:all%7Celement:all%7Cvisibility:on%7Ccolor:0xf2f2f2&style=feature:landscape%7Celement:geometry%7Ccolor:0xf2f2f2&style=feature:poi%7Celement:all%7Cvisibility:off&style=feature:road%7Celement:all%7Csaturation:-100%7Clightness:45&style=feature:road.highway%7Celement:all%7Cvisibility:simplified&style=feature:road.arterial%7Celement:labels.icon%7Cvisibility:off&style=feature:transit%7Celement:all%7Cvisibility:off&style=feature:water%7Celement:all%7Ccolor:0xcdcdcd&key=${mapApiKey}')` :
+                'none'
+            }}
+          >
+            {showRoutes && mockRoutes.map((route) => {
+              const isSelected = selectedRoute?.id === route.id;
+              
+              return (
+                <div 
+                  key={route.id}
+                  className={cn(
+                    'absolute inset-0 pointer-events-none transition-opacity duration-500',
+                    isSelected ? 'opacity-100' : 'opacity-30'
+                  )}
+                >
+                  <svg className="absolute inset-0 w-full h-full">
+                    <path
+                      d={`M ${(route.points[0].lng - 22.9) * 500 + 150} ${(40.66 - route.points[0].lat) * 500 + 100} 
+                          C ${(route.points[1].lng - 22.9) * 500 + 150} ${(40.66 - route.points[1].lat) * 500 + 100},
+                            ${(route.points[2].lng - 22.9) * 500 + 150} ${(40.66 - route.points[2].lat) * 500 + 100},
+                            ${(route.points[3].lng - 22.9) * 500 + 150} ${(40.66 - route.points[3].lat) * 500 + 100}`}
+                      stroke={route.isCleanest ? "#22c55e" : "#f97316"}
+                      strokeWidth={isSelected ? 5 : 3}
+                      strokeLinecap="round"
+                      strokeDasharray={route.isCleanest ? "0" : "10,5"}
+                      fill="none"
+                    />
+                  </svg>
+                  
+                  {route.id === '2' && isSelected && (
+                    <div className="absolute top-[40%] left-[50%] h-16 w-16 rounded-full bg-red-500/20 animate-pulse" />
+                  )}
+                  {route.id === '3' && isSelected && (
+                    <div className="absolute top-[45%] left-[48%] h-20 w-20 rounded-full bg-red-500/20 animate-pulse" />
+                  )}
+                  
+                  <div className="absolute bottom-[30%] left-[30%] transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 border-2 border-white shadow-md">
+                      <MapPin className="h-4 w-4 text-white" />
                     </div>
-                    
-                    <div className="absolute top-[40%] left-[35%] transform -translate-x-1/2 -translate-y-1/2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/30 border border-orange-500">
-                        <AlertTriangle className="h-3 w-3 text-orange-600" />
-                      </div>
+                  </div>
+                  
+                  <div className="absolute top-[20%] right-[40%] transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 border-2 border-white shadow-md">
+                      <Navigation className="h-4 w-4 text-white" />
                     </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+                  </div>
+                  
+                  {isSelected && (
+                    <>
+                      <div className="absolute bottom-[40%] right-[40%] transform -translate-x-1/2 -translate-y-1/2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/30 border border-red-500">
+                          <AlertTriangle className="h-3 w-3 text-red-600" />
+                        </div>
+                      </div>
+                      
+                      <div className="absolute top-[40%] left-[35%] transform -translate-x-1/2 -translate-y-1/2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/30 border border-orange-500">
+                          <AlertTriangle className="h-3 w-3 text-orange-600" />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
         
-        {/* Route selection sidebar */}
         {showRoutes && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -317,7 +325,6 @@ const CleanRouteMap = ({ className, origin, destination, transportMode, pollutio
         )}
       </div>
       
-      {/* Legend at the bottom */}
       {isMapLoaded && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}

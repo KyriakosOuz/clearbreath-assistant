@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useRealTimeAirQuality } from '@/hooks/use-real-time-air-quality';
+import { getGoogleMapsApiKey } from '@/lib/google-maps';
 
 interface AirQualityMapProps {
   className?: string;
@@ -114,6 +115,7 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
   const [isForecastLoading, setIsForecastLoading] = useState(false);
   const [forecastData, setForecastData] = useState<ForecastDataPoint[]>([]);
   const [nearbyStations, setNearbyStations] = useState<MapLocation[]>([]);
+  const [mapApiKey, setMapApiKey] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   
   // Get user's location
@@ -136,6 +138,20 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
       toast.error("Geolocation is not supported by your browser. Using default location.");
       setUserLocation({ lat: 40.63, lng: 22.95 });
     }
+  }, []);
+  
+  // Get Google Maps API key
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const key = await getGoogleMapsApiKey();
+        setMapApiKey(key);
+      } catch (error) {
+        console.error("Failed to load Google Maps API key:", error);
+      }
+    };
+    
+    fetchApiKey();
   }, []);
   
   // Generate nearby stations based on the actual air quality data
@@ -223,7 +239,7 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
   return (
     <div className={cn('relative rounded-2xl bg-white shadow-lg overflow-hidden', className)}>
       <div className="relative h-[500px] w-full">
-        {!isMapLoaded || isAirQualityLoading || !userLocation ? (
+        {!isMapLoaded || isAirQualityLoading || !userLocation || !mapApiKey ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4" />
             <p className="text-muted-foreground">Loading map and air quality data...</p>
@@ -248,7 +264,7 @@ const AirQualityMap = ({ className }: AirQualityMapProps) => {
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50" 
                 style={{
-                  backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${userLocation.lat},${userLocation.lng}&zoom=12&size=800x500&scale=2&style=feature:all%7Celement:all%7Cvisibility:on%7Ccolor:0xf2f2f2&style=feature:landscape%7Celement:geometry%7Ccolor:0xf2f2f2&style=feature:poi%7Celement:all%7Cvisibility:off&style=feature:road%7Celement:all%7Csaturation:-100%7Clightness:45&style=feature:road.highway%7Celement:all%7Cvisibility:simplified&style=feature:road.arterial%7Celement:labels.icon%7Cvisibility:off&style=feature:transit%7Celement:all%7Cvisibility:off&style=feature:water%7Celement:all%7Ccolor:0xcdcdcd&key=AIzaSyDRE_a17kZ0tNhZ4Z14dYVU22KX5Hci_DU')`
+                  backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${userLocation.lat},${userLocation.lng}&zoom=12&size=800x500&scale=2&style=feature:all%7Celement:all%7Cvisibility:on%7Ccolor:0xf2f2f2&style=feature:landscape%7Celement:geometry%7Ccolor:0xf2f2f2&style=feature:poi%7Celement:all%7Cvisibility:off&style=feature:road%7Celement:all%7Csaturation:-100%7Clightness:45&style=feature:road.highway%7Celement:all%7Cvisibility:simplified&style=feature:road.arterial%7Celement:labels.icon%7Cvisibility:off&style=feature:transit%7Celement:all%7Cvisibility:off&style=feature:water%7Celement:all%7Ccolor:0xcdcdcd&key=${mapApiKey}')`
                 }}
               />
 

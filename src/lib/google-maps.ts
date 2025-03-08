@@ -1,12 +1,8 @@
 
 import { toast } from "sonner";
 
-// We'll fall back to a default API key if the environment variable is not set
-// This should be replaced with a proper API key from Supabase Edge Function in a production environment
-const FALLBACK_API_KEY = "AIzaSyDRE_a17kZ0tNhZ4Z14dYVU22KX5Hci_DU";
-
 // Function to get the Google Maps API key from Supabase
-const getGoogleMapsApiKey = async (): Promise<string> => {
+export const getGoogleMapsApiKey = async (): Promise<string> => {
   try {
     const supabaseUrl = 'https://uugdlxzevfyodglfrxdb.supabase.co';
     const response = await fetch(`${supabaseUrl}/functions/v1/maps-config`, {
@@ -22,10 +18,16 @@ const getGoogleMapsApiKey = async (): Promise<string> => {
     }
     
     const data = await response.json();
+    
+    if (!data.key) {
+      throw new Error('No API key returned from server');
+    }
+    
     return data.key;
   } catch (error) {
     console.error("Error fetching Google Maps API key:", error);
-    return FALLBACK_API_KEY;
+    toast.error("Could not load maps API key. Maps functionality may be limited.");
+    throw error;
   }
 };
 
