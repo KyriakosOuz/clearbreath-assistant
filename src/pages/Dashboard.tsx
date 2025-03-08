@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthProtect } from '@/hooks/use-auth-protect';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowUpRight, ArrowDownRight, Database, Upload, Search, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useDatasets } from '@/hooks/use-datasets';
@@ -14,14 +13,29 @@ import { DatasetCard } from '@/components/DatasetCard';
 import { DatasetViewer } from '@/components/dataset-viewer/DatasetViewer';
 import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   // Protect this route - only authenticated users can access
   const { isLoaded, isSignedIn } = useAuthProtect();
-  const { user } = useUser();
   const { datasets, isLoading, refetchDatasets } = useDatasets();
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [userName, setUserName] = useState<string>('User');
+  
+  useEffect(() => {
+    // Get user information from Supabase
+    const getUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        // Use the part before @ in the email as the name
+        const emailName = user.email.split('@')[0];
+        setUserName(emailName);
+      }
+    };
+    
+    getUserInfo();
+  }, []);
   
   // Show loading state while checking authentication
   if (!isLoaded) {
@@ -62,7 +76,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-3xl font-bold">Dataset Dashboard</h1>
             <p className="mt-1 text-muted-foreground">
-              Welcome, {user?.firstName || 'User'}! Manage and analyze your air quality datasets.
+              Welcome, {userName}! Manage and analyze your air quality datasets.
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex gap-2">
