@@ -24,10 +24,10 @@ export interface AirQualityData {
   };
   category: 'good' | 'moderate' | 'unhealthy' | 'hazardous' | 'severe';
   mainPollutant?: string;
-  attribution?: Array<{
+  attribution?: {
     name: string;
     url: string;
-  }>;
+  }[];
 }
 
 // Helper to determine AQI category
@@ -171,7 +171,13 @@ export const useRealTimeAirQuality = (
       }
       
       // Only show notifications for unhealthy air if this is the preferred location and notifications aren't disabled
+      const preferredLocation = getUserPreferredLocation();
+      const isPreferredLocation = preferredLocation && 
+        preferredLocation.lat === lat && 
+        preferredLocation.lon === lon;
+      
       if (!disableNotifications && 
+          isPreferredLocation &&
           (aqiData.category === 'unhealthy' || aqiData.category === 'hazardous' || aqiData.category === 'severe')) {
         toast.warning(`Air quality alert for ${aqiData.location}`, {
           description: `AQI is at ${aqiData.aqi} (${aqiData.category}). Consider limiting outdoor activities.`,
@@ -201,7 +207,7 @@ export const useRealTimeAirQuality = (
       }
       
       // Show error toast (but not for mock data scenario)
-      if (data) {
+      if (data && !disableNotifications) {
         toast.error('Error fetching air quality data', {
           description: err instanceof Error ? err.message : 'Please try again later',
           duration: 5000,

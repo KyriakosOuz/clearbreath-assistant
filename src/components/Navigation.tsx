@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -15,13 +16,13 @@ import {
   LogOut,
   LogIn
 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from '@/components/ui/button';
 import { useUser, useClerk } from '@clerk/clerk-react';
-import { useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
   const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
@@ -48,9 +49,13 @@ const Navigation = () => {
   };
 
   const handleSignOut = () => {
-    import('@/lib/auth').then(({ signOut }) => {
-      signOut();
-    });
+    if (clerkInstance?.signOut) {
+      clerkInstance.signOut();
+    } else {
+      import('@/lib/auth').then(({ signOut }) => {
+        signOut();
+      });
+    }
   };
 
   const handleSignIn = () => {
@@ -128,19 +133,18 @@ const Navigation = () => {
       <ScrollArea className="flex-1 space-y-4 p-4">
         <div className="space-y-1">
           {routes.map((route) => (
-            <motion.a
-              key={route.path}
-              href={route.path}
-              className={cn(
-                "group flex items-center space-x-3 rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                collapsed ? "justify-center" : "justify-start"
-              )}
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <route.icon className="h-4 w-4" />
-              {!collapsed && <span>{route.name}</span>}
-            </motion.a>
+            <motion.div key={route.path} whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+              <Link
+                to={route.path}
+                className={cn(
+                  "group flex items-center space-x-3 rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  collapsed ? "justify-center" : "justify-start"
+                )}
+              >
+                <route.icon className="h-4 w-4" />
+                {!collapsed && <span>{route.name}</span>}
+              </Link>
+            </motion.div>
           ))}
         </div>
       </ScrollArea>

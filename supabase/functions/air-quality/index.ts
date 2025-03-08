@@ -70,19 +70,42 @@ serve(async (req) => {
       fetch(forecastUrl)
     ]);
     
-    if (!currentResponse.ok || !forecastResponse.ok) {
-      throw new Error('Failed to fetch air quality data');
+    if (!currentResponse.ok) {
+      const errorText = await currentResponse.text();
+      console.error('OpenWeatherMap API error:', errorText);
+      throw new Error(`Failed to fetch air quality data: ${currentResponse.status}`);
+    }
+    
+    if (!forecastResponse.ok) {
+      const errorText = await forecastResponse.text();
+      console.error('OpenWeatherMap forecast API error:', errorText);
+      throw new Error(`Failed to fetch forecast data: ${forecastResponse.status}`);
     }
     
     const currentData = await currentResponse.json();
     const forecastData = await forecastResponse.json();
     
+    // Handle empty response
+    if (!currentData.list || currentData.list.length === 0) {
+      throw new Error('No air quality data received');
+    }
+    
     // Get city name from reverse geocoding
     const geocodingUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${openWeatherApiKey}`;
-    const geocodingResponse = await fetch(geocodingUrl);
-    const geocodingData = await geocodingResponse.json();
+    let cityName = 'Unknown Location';
     
-    const cityName = geocodingData[0]?.name || 'Unknown Location';
+    try {
+      const geocodingResponse = await fetch(geocodingUrl);
+      if (geocodingResponse.ok) {
+        const geocodingData = await geocodingResponse.json();
+        if (geocodingData.length > 0) {
+          cityName = geocodingData[0]?.name || 'Unknown Location';
+        }
+      }
+    } catch (geoError) {
+      console.error('Error fetching location name:', geoError);
+      // Continue with unknown location rather than failing completely
+    }
     
     // Process the air quality data
     const currentAQI = currentData.list[0].main.aqi;
@@ -98,7 +121,7 @@ serve(async (req) => {
     // Process forecast data (next 24 hours, at 3-hour intervals)
     const hourlyForecast = forecastData.list
       .slice(0, 8)  // Get next 24 hours (8 entries at 3-hour intervals)
-      .map((item: any) => {
+      .map((item) => {
         const date = new Date(item.dt * 1000);
         return {
           hour: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -136,8 +159,18 @@ serve(async (req) => {
     console.error('Error fetching air quality data:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        status: 'error',
+        error: error.message || 'Unknown error occurred',
+        data: {
+          aqi: 1,
+          city: 'Unavailable',
+          coordinates: { latitude: 0, longitude: 0 },
+          time: new Date().toISOString(),
+          pollutants: {}
+        }
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

@@ -11,6 +11,7 @@ import AQIScale from '@/components/AQIScale';
 import HealthRecommendation from '@/components/HealthRecommendation';
 import { Button } from '@/components/ui/button';
 import { useRealTimeAirQuality } from '@/hooks/use-real-time-air-quality';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Index = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
@@ -28,15 +29,45 @@ const Index = () => {
         },
         (error) => {
           console.log('Error getting location:', error);
+          // Default to Thessaloniki if geolocation fails
+          setUserLocation({
+            lat: 40.6403,
+            lon: 22.9439
+          });
         }
       );
+    } else {
+      // Default to Thessaloniki if geolocation is not supported
+      setUserLocation({
+        lat: 40.6403,
+        lon: 22.9439
+      });
+    }
+  }, []);
+  
+  // Get saved preferred location if available
+  useEffect(() => {
+    try {
+      const savedLocation = localStorage.getItem('airQualityPreferredLocation');
+      if (savedLocation) {
+        const parsed = JSON.parse(savedLocation);
+        if (parsed && parsed.lat && parsed.lon) {
+          setUserLocation({
+            lat: parsed.lat,
+            lon: parsed.lon
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error reading preferred location:', e);
     }
   }, []);
   
   // Fetch real-time air quality data using our custom hook
-  const { data: airQualityData, isLoading, error } = useRealTimeAirQuality(
+  const { data: airQualityData, isLoading, error, refreshData } = useRealTimeAirQuality(
     userLocation?.lat,
-    userLocation?.lon
+    userLocation?.lon,
+    { disableNotifications: true }
   );
   
   // Show error toast if data fetch fails
@@ -46,11 +77,11 @@ const Index = () => {
         description: error,
         action: {
           label: 'Retry',
-          onClick: () => window.location.reload()
+          onClick: () => refreshData()
         }
       });
     }
-  }, [error]);
+  }, [error, refreshData]);
   
   return (
     <AnimatedBackground intensity="light">
@@ -106,6 +137,19 @@ const Index = () => {
                   <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
                   <div className="h-[250px] rounded-2xl bg-muted/20 animate-pulse" />
                 </>
+              ) : error ? (
+                <div className="md:col-span-2">
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    <AlertDescription>
+                      We're having trouble connecting to our air quality services. 
+                      Please try again later or check your internet connection.
+                    </AlertDescription>
+                  </Alert>
+                  <Button onClick={refreshData} className="w-full">
+                    Retry Loading Air Quality Data
+                  </Button>
+                </div>
               ) : (
                 <>
                   <AirQualityCard 
@@ -119,20 +163,20 @@ const Index = () => {
               )}
             </div>
             
-            {userLocation && (
+            {userLocation && !error && (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
                 className="mt-4 text-center text-sm text-muted-foreground"
               >
-                <p>Showing data for your current location</p>
+                <p>Showing data for {airQualityData?.location || 'your current location'}</p>
               </motion.div>
             )}
             
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 20 : 0 }}
+              animate={{ opacity: isLoading || error ? 0 : 1, y: isLoading || error ? 20 : 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mt-6"
             >

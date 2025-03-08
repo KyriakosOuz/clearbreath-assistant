@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, MapPin, Clock, Info, Database } from 'lucide-react';
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
 import AQIScale from '@/components/AQIScale';
 import AirQualitySourceSelector from '@/components/AirQualitySourceSelector';
 import { Badge } from '@/components/ui/badge';
+import { LocationPreferenceModal } from './LocationPreferenceModal';
 
 interface AirQualityWidgetProps {
   latitude?: number;
@@ -41,6 +43,7 @@ const AirQualityWidget = ({
   className 
 }: AirQualityWidgetProps) => {
   const [dataSource, setDataSource] = useState<DataSource>('combined');
+  const [showPreferenceModal, setShowPreferenceModal] = useState(false);
   
   const { 
     data, 
@@ -61,6 +64,30 @@ const AirQualityWidget = ({
     hour: '2-digit', 
     minute: '2-digit' 
   }) : '';
+
+  const handleSetPreferred = () => {
+    if (data?.city) {
+      // Store preference in local storage
+      localStorage.setItem('airQualityPreferredLocation', JSON.stringify({
+        name: data.city,
+        lat: latitude,
+        lon: longitude
+      }));
+      setShowPreferenceModal(false);
+    }
+  };
+  
+  const isCurrentLocationPreferred = () => {
+    try {
+      const stored = localStorage.getItem('airQualityPreferredLocation');
+      if (!stored || !data?.city) return false;
+      
+      const preference = JSON.parse(stored);
+      return preference.name === data.city;
+    } catch (e) {
+      return false;
+    }
+  };
   
   return (
     <motion.div
@@ -82,8 +109,7 @@ const AirQualityWidget = ({
               <MapPin className="mr-1 h-3.5 w-3.5" />
               <span>{data?.city || 'Unknown Location'}</span>
               
-              {localStorage.getItem('airQualityPreferredLocation') && 
-               JSON.parse(localStorage.getItem('airQualityPreferredLocation') || '{}').name === data?.city && (
+              {isCurrentLocationPreferred() && (
                 <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                   Preferred
                 </span>
@@ -187,6 +213,17 @@ const AirQualityWidget = ({
               <span>Updated at {formattedTime}</span>
             </div>
             
+            {!isCurrentLocationPreferred() && data?.city && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-4 w-full"
+                onClick={() => setShowPreferenceModal(true)}
+              >
+                Set as Preferred Location
+              </Button>
+            )}
+            
             <div className="mt-4 pt-3 border-t border-muted">
               <h4 className="text-xs font-medium mb-2">Source comparison</h4>
               <div className="grid grid-cols-2 gap-3">
@@ -207,6 +244,13 @@ const AirQualityWidget = ({
           </>
         )}
       </div>
+      
+      <LocationPreferenceModal 
+        isOpen={showPreferenceModal}
+        onClose={() => setShowPreferenceModal(false)}
+        onConfirm={handleSetPreferred}
+        locationName={data?.city || 'Unknown Location'}
+      />
     </motion.div>
   );
 };
