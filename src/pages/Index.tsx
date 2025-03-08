@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, ArrowRight, AlertTriangle } from 'lucide-react';
@@ -14,7 +13,10 @@ import { useRealTimeAirQuality } from '@/hooks/use-real-time-air-quality';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Index = () => {
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number }>({
+    lat: 40.6403,
+    lon: 22.9439
+  });
   const { user, isLoaded } = useUser();
   
   // Try to get user's location
@@ -22,52 +24,22 @@ const Index = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          });
+          // We're keeping the default Thessaloniki coordinates even if we get user's location
+          console.log('Using default Thessaloniki location instead of user location');
         },
         (error) => {
           console.log('Error getting location:', error);
-          // Default to Thessaloniki if geolocation fails
-          setUserLocation({
-            lat: 40.6403,
-            lon: 22.9439
-          });
+          // Already defaulted to Thessaloniki
         }
       );
-    } else {
-      // Default to Thessaloniki if geolocation is not supported
-      setUserLocation({
-        lat: 40.6403,
-        lon: 22.9439
-      });
-    }
-  }, []);
-  
-  // Get saved preferred location if available
-  useEffect(() => {
-    try {
-      const savedLocation = localStorage.getItem('airQualityPreferredLocation');
-      if (savedLocation) {
-        const parsed = JSON.parse(savedLocation);
-        if (parsed && parsed.lat && parsed.lon) {
-          setUserLocation({
-            lat: parsed.lat,
-            lon: parsed.lon
-          });
-        }
-      }
-    } catch (e) {
-      console.error('Error reading preferred location:', e);
     }
   }, []);
   
   // Fetch real-time air quality data using our custom hook
   const { data: airQualityData, isLoading, error, refreshData } = useRealTimeAirQuality(
-    userLocation?.lat,
-    userLocation?.lon,
-    { disableNotifications: true }
+    userLocation.lat,
+    userLocation.lon,
+    { disableNotifications: true, locationName: 'Thessaloniki, Greece' }
   );
   
   // Show error toast if data fetch fails

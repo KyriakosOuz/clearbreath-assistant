@@ -117,6 +117,10 @@ export const useRealTimeAirQuality = (
         } else {
           lat = 40.6401;
           lon = 22.9444;
+          location = location || 'Thessaloniki, Greece';
+        }
+      } else if (!location) {
+        if (lat === 40.6403 && Math.abs(lon - 22.9439) < 0.01) {
           location = 'Thessaloniki, Greece';
         }
       }
@@ -141,7 +145,7 @@ export const useRealTimeAirQuality = (
       // Parse and format the data
       const aqiData: AirQualityData = {
         aqi: iqairData.data.aqi,
-        location: iqairData.data.city || location || 'Unknown Location',
+        location: iqairData.data.city || location || 'Thessaloniki, Greece',
         updatedAt: formatUpdatedTime(iqairData.data.time || Date.now()),
         pollutants: iqairData.data.pollutants || {
           'PM2.5': 0,
@@ -187,7 +191,7 @@ export const useRealTimeAirQuality = (
         
         setData({
           aqi: 42,
-          location: savedLocation?.name || 'Thessaloniki, City Center',
+          location: locationName || savedLocation?.name || 'Thessaloniki, Greece',
           updatedAt: '2 minutes ago',
           pollutants: {
             'PM2.5': 12,

@@ -126,17 +126,27 @@ serve(async (req) => {
     // Process the IQAir data to match our application's format
     const data = rawData.data;
     const aqi = data.current.pollution.aqius;
+    
+    // Determine city name - for Thessaloniki coordinates, ensure correct city name
+    let cityName = `${data.city}, ${data.country}`;
+    const isThessalonikiArea = Math.abs(parseFloat(lat) - 40.64) < 0.1 && Math.abs(parseFloat(lon) - 22.94) < 0.1;
+    
+    if (isThessalonikiArea && data.city !== 'Thessaloniki') {
+      console.log(`Coordinates match Thessaloniki area, overriding city name from '${data.city}' to 'Thessaloniki'`);
+      cityName = `Thessaloniki, ${data.country}`;
+    }
+    
     const processedData = {
       status: 'success',
       data: {
         aqi: aqi,
-        city: `${data.city}, ${data.country}`,
+        city: cityName,
         coordinates: {
           latitude: parseFloat(lat),
           longitude: parseFloat(lon)
         },
         time: new Date().toISOString(),
-        station: data.city,
+        station: isThessalonikiArea ? 'Thessaloniki' : data.city,
         pollutants: {
           'PM2.5': data.current.pollution.mainus === 'p2' ? data.current.pollution.aqius : 0,
           'PM10': data.current.pollution.mainus === 'p1' ? data.current.pollution.aqius : 0
@@ -195,6 +205,10 @@ function generateFallbackData(lat: string | number, lon: string | number) {
   const latitude = typeof lat === 'string' ? parseFloat(lat) : lat;
   const longitude = typeof lon === 'string' ? parseFloat(lon) : lon;
   
+  // Check if coordinates are for Thessaloniki
+  const isThessalonikiArea = Math.abs(latitude - 40.64) < 0.1 && Math.abs(longitude - 22.94) < 0.1;
+  const cityName = isThessalonikiArea ? 'Thessaloniki, Greece' : 'Unknown Location';
+  
   // Generate a somewhat realistic AQI value (40-80 range)
   const aqi = Math.floor(Math.random() * 40) + 40;
   
@@ -202,13 +216,13 @@ function generateFallbackData(lat: string | number, lon: string | number) {
     status: 'success',
     data: {
       aqi: aqi,
-      city: 'Unknown Location',
+      city: cityName,
       coordinates: {
         latitude: latitude,
         longitude: longitude
       },
       time: new Date().toISOString(),
-      station: 'Fallback Data',
+      station: isThessalonikiArea ? 'Thessaloniki' : 'Fallback Data',
       pollutants: {
         'PM2.5': Math.round(aqi * 0.8),
         'PM10': Math.round(aqi * 0.5)
