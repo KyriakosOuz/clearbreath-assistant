@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { AirQualityDataset } from '@/types/dataset';
 import { v4 as uuidv4 } from 'uuid';
@@ -104,8 +105,20 @@ export const processDataset = async (datasetId: string): Promise<void> => {
   try {
     console.log(`Triggering processing for dataset: ${datasetId}`);
     
-    const { error } = await supabase.functions.invoke('process-dataset', {
-      body: { datasetId }
+    // Get the current user's session for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error('No active session found when trying to process dataset');
+      throw new Error('Authentication required to process datasets');
+    }
+    
+    // Use the invoke method with proper authorization
+    const { error, data } = await supabase.functions.invoke('process-dataset', {
+      body: { datasetId },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     });
 
     if (error) {
@@ -113,7 +126,7 @@ export const processDataset = async (datasetId: string): Promise<void> => {
       throw new Error(`Dataset processing failed: ${error.message}`);
     }
     
-    console.log(`Processing request submitted successfully for dataset: ${datasetId}`);
+    console.log(`Processing request submitted successfully for dataset: ${datasetId}`, data);
   } catch (error) {
     console.error('Error in processDataset:', error);
     throw new Error(`Processing request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

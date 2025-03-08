@@ -11,15 +11,62 @@ import {
   updateDatasetWithResults
 } from "./supabase-client.ts";
 
+// CORS headers for browser requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
-    // Get the request body
-    const { datasetId } = await req.json();
+    // Get the request body safely
+    let body;
+    try {
+      const text = await req.text();
+      if (!text || text.trim() === '') {
+        return new Response(
+          JSON.stringify({ error: "Empty request body" }),
+          { 
+            status: 400, 
+            headers: { 
+              "Content-Type": "application/json",
+              ...corsHeaders
+            } 
+          }
+        );
+      }
+      body = JSON.parse(text);
+    } catch (parseError) {
+      console.error("Error parsing request JSON:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders
+          } 
+        }
+      );
+    }
+    
+    const { datasetId } = body;
     
     if (!datasetId) {
       return new Response(
         JSON.stringify({ error: "Dataset ID is required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
       );
     }
     
@@ -60,7 +107,13 @@ serve(async (req) => {
         
         return new Response(
           JSON.stringify({ error: "No data found in file" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
+          { 
+            status: 400, 
+            headers: { 
+              "Content-Type": "application/json",
+              ...corsHeaders 
+            } 
+          }
         );
       }
       
@@ -86,7 +139,13 @@ serve(async (req) => {
           dataset_id: datasetId,
           prediction_id: prediction.id
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 200, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
       );
     } catch (error) {
       console.error("Error processing dataset:", error);
@@ -100,14 +159,26 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({ error: error.message || "Error processing dataset" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
       );
     }
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { 
+        status: 500, 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders 
+        } 
+      }
     );
   }
 });
