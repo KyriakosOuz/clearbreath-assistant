@@ -29,6 +29,7 @@ export const useDatasetUpload = () => {
 
       setUploadProgress(20);
       
+      // Log detailed information for debugging
       console.log(`Starting upload for file: ${file.name} (${file.size} bytes)`);
       console.log(`User is signed in: ${isSignedIn}, User ID: ${user.id}`);
 
@@ -51,15 +52,20 @@ export const useDatasetUpload = () => {
       
       // Provide more descriptive error messages
       if (error instanceof Error) {
-        if (error.message.includes('storage') || error.message.includes('objects')) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes('violates row-level security')) {
+          console.error('RLS error details:', error);
+          toast.error('Authorization error: Could not create dataset with your user account. Please try signing out and back in.');
+        } else if (errorMsg.includes('storage') || errorMsg.includes('objects')) {
           toast.error('Storage permission error. Please try again or contact support.');
-        } else if (error.message.includes('database')) {
+        } else if (errorMsg.includes('database')) {
           toast.error('Error saving dataset information. Please try again.');
-        } else if (error.message.includes('processing')) {
+        } else if (errorMsg.includes('processing')) {
           toast.error('Dataset uploaded but processing failed. You can try reprocessing it later.');
-        } else if (error.message.includes('permission')) {
+        } else if (errorMsg.includes('permission')) {
           toast.error('Permission denied. Please check your account privileges.');
-        } else if (error.message.includes('network')) {
+        } else if (errorMsg.includes('network')) {
           toast.error('Network error. Please check your internet connection and try again.');
         } else {
           toast.error(`Upload error: ${error.message}`);

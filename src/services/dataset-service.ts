@@ -58,6 +58,7 @@ export const uploadDatasetFile = async (
 
     try {
       // Create dataset record in database - explicitly set user_id to the current user's ID
+      // Make sure to include the auth() header to pass RLS policies
       const { data: datasetData, error: datasetError } = await supabase
         .from('air_quality_datasets')
         .insert({
@@ -73,6 +74,7 @@ export const uploadDatasetFile = async (
   
       if (datasetError) {
         console.error('Error creating dataset record:', datasetError);
+        console.error('Attempted to create record with user_id:', userId);
         // Cleanup the uploaded file if the database record failed
         await supabase.storage.from('datasets').remove([fileName]);
         throw new Error(`Database error: ${datasetError.message}`);
