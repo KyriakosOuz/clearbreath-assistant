@@ -49,8 +49,8 @@ export const usePredictions = (datasetId?: string) => {
         return {
           id: item.id,
           dataset_id: item.dataset_id,
-          predicted_pollution_zones: parsedPollutionZones as PollutionZone[],
-          generated_routes: parsedRoutes as {
+          predicted_pollution_zones: parsedPollutionZones as unknown as PollutionZone[],
+          generated_routes: parsedRoutes as unknown as {
             standard: RoutePoint[];
             clean: RoutePoint[];
             pollution_zones: PollutionZone[];
