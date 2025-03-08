@@ -1,26 +1,43 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, FileUp, Upload, Database, BarChart, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { useDatasets } from '@/hooks/use-datasets';
 import { DatasetCard } from '@/components/DatasetCard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const { user, isLoaded } = useUser();
   const { datasets, isLoading, refetchDatasets } = useDatasets();
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [userName, setUserName] = useState<string>('User');
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   
   // Get the most recent datasets (limit to 3)
   const recentDatasets = datasets.slice(0, 3);
+  
+  useEffect(() => {
+    // Get user information from Supabase
+    const getUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        // Use the part before @ in the email as the name
+        const emailName = user.email.split('@')[0];
+        setUserName(emailName);
+        setIsSignedIn(true);
+      } else {
+        setIsSignedIn(false);
+      }
+    };
+    
+    getUserInfo();
+  }, []);
   
   const handleViewDataset = (datasetId: string) => {
     setSelectedDatasetId(datasetId);
@@ -82,8 +99,8 @@ const Index = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mb-6 text-center text-2xl font-bold"
             >
-              {isLoaded && user 
-                ? `Your Recent Datasets, ${user.firstName || 'User'}`
+              {isSignedIn 
+                ? `Your Recent Datasets, ${userName}`
                 : 'Recent Datasets'}
             </motion.h2>
             
