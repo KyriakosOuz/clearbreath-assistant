@@ -23,49 +23,12 @@ export const fetchDatasets = async (): Promise<AirQualityDataset[]> => {
   }
 };
 
-// Create a storage bucket if it doesn't exist
-const ensureStorageBucket = async (): Promise<void> => {
-  try {
-    // Check if bucket exists
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-    
-    if (bucketError) {
-      console.error('Error checking buckets:', bucketError);
-      throw new Error(`Storage error: ${bucketError.message}`);
-    }
-    
-    // If 'datasets' bucket doesn't exist, create it
-    if (!buckets?.find(b => b.name === 'datasets')) {
-      console.log('Creating datasets bucket...');
-      const { error: createError } = await supabase.storage.createBucket('datasets', {
-        public: false,
-        fileSizeLimit: 10485760, // 10MB in bytes
-      });
-      
-      if (createError) {
-        console.error('Error creating datasets bucket:', createError);
-        throw new Error(`Storage error: ${createError.message}`);
-      }
-      
-      console.log('Datasets bucket created successfully');
-    } else {
-      console.log('Datasets bucket already exists');
-    }
-  } catch (error) {
-    console.error('Error ensuring storage bucket exists:', error);
-    throw error;
-  }
-};
-
 // Upload a file to storage and create dataset record
 export const uploadDatasetFile = async (
   file: File, 
   userId: string
 ): Promise<AirQualityDataset> => {
   try {
-    // Ensure datasets bucket exists
-    await ensureStorageBucket();
-    
     // Generate a unique filename
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const fileName = `${uuidv4()}.${fileExtension}`;
@@ -73,15 +36,7 @@ export const uploadDatasetFile = async (
     console.log(`Uploading file to storage: ${fileName}`);
     
     try {
-      // Check if bucket exists
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-      console.log('Available buckets:', buckets?.map(b => b.name));
-      
-      if (bucketError) {
-        console.error('Error checking buckets:', bucketError);
-      }
-      
-      // Upload file to storage with retries
+      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('datasets')
         .upload(fileName, file, {
