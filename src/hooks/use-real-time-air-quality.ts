@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Types for air quality data
@@ -70,12 +69,6 @@ export const useRealTimeAirQuality = (latitude?: number, longitude?: number) => 
     setError(null);
     
     try {
-      // Create a Supabase client
-      const supabase = createClient(
-        'https://uugdlxzevfyodglfrxdb.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Z2RseHpldmZ5b2RnbGZyeGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjEyODUsImV4cCI6MjA1NDg5NzI4NX0.zUGXkMKIrPa4_5hBXzg2WcQA8t8dHvM4rO4ZpyDJaSQ'
-      );
-      
       // Default to Thessaloniki if no coordinates provided
       const lat = latitude || 40.6401;
       const lon = longitude || 22.9444;

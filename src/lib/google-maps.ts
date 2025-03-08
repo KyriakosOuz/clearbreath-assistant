@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Function to get the Google Maps API key from Supabase
@@ -8,8 +7,7 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
     const response = await fetch(`${supabaseUrl}/functions/v1/maps-config`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Z2RseHpldmZ5b2RnbGZyeGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjEyODUsImV4cCI6MjA1NDg5NzI4NX0.zUGXkMKIrPa4_5hBXzg2WcQA8t8dHvM4rO4ZpyDJaSQ'
+        'Content-Type': 'application/json'
       }
     });
     
