@@ -17,3 +17,19 @@ export function parseCSV(csvContent: string) {
       return row;
     });
 }
+
+// Parse JSON data
+export function parseJSON(jsonContent: string) {
+  return JSON.parse(jsonContent);
+}
+
+// Handle data file parsing based on file type
+export function parseDataFile(fileContent: string, fileType: string) {
+  if (fileType === 'json') {
+    return parseJSON(fileContent);
+  } else if (fileType === 'csv') {
+    return parseCSV(fileContent);
+  } else {
+    throw new Error(`Unsupported file type: ${fileType}`);
+  }
+}

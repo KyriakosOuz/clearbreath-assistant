@@ -10,7 +10,7 @@ import { DatasetViewerSkeleton } from './DatasetViewerSkeleton';
 import { DatasetHeader } from './DatasetHeader';
 import { DatasetStats } from './DatasetStats';
 import { DatasetContent } from './DatasetContent';
-import { parseCSV } from '@/utils/file-parsers';
+import { parseDataFile } from '@/utils/file-parsers';
 
 interface DatasetViewerProps {
   datasetId: string;
@@ -58,16 +58,12 @@ export function DatasetViewer({ datasetId }: DatasetViewerProps) {
         const text = await fileData.text();
         let parsedData;
 
-        if (dataset.file_type === 'json') {
-          parsedData = JSON.parse(text);
-        } else if (dataset.file_type === 'csv') {
-          parsedData = parseCSV(text);
-        } else if (dataset.file_type === 'xlsx') {
+        if (dataset.file_type === 'xlsx') {
           // For XLSX files, we'll use the data_preview from the dataset
           // as parsing XLSX requires the xlsx library which we can't use in the browser
           parsedData = dataset.data_preview || [];
         } else {
-          throw new Error(`Unsupported file type: ${dataset.file_type}`);
+          parsedData = parseDataFile(text, dataset.file_type);
         }
 
         return parsedData;
