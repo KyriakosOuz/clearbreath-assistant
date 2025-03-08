@@ -25,6 +25,15 @@ export interface PollutionPrediction {
   };
   status: 'Pending' | 'Processing' | 'Completed' | 'Failed';
   created_at: string;
+  // Updated property names to match database column names exactly
+  mlinsights?: MLInsight[];
+  trends?: Trend[];
+  correlations?: Correlation[];
+  predictions?: {
+    nextDayPrediction: number;
+    nextWeekTrend: 'increasing' | 'stable' | 'decreasing';
+    confidence: number;
+  };
 }
 
 export interface PollutionZone {
@@ -40,4 +49,24 @@ export interface PollutionZone {
 export interface RoutePoint {
   lat: number;
   lng: number;
+}
+
+// Added to match the data structure coming from processor.ts
+export interface MLInsight {
+  type: string;
+  description: string;
+  confidence: number;
+  relevance: number;
+}
+
+export interface Trend {
+  period: string;
+  averageValue: number;
+  changePercent: number;
+}
+
+export interface Correlation {
+  factor: string;
+  strength: number;
+  description: string;
 }

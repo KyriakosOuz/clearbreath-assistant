@@ -61,13 +61,14 @@ export async function downloadFile(supabase: any, fileName: string) {
 }
 
 export async function savePrediction(supabase: any, datasetId: string, processedResults: any) {
+  // Make sure to use correct casing for column names to match the database
   const { data, error } = await supabase
     .from('pollution_predictions')
     .insert({
       dataset_id: datasetId,
       predicted_pollution_zones: processedResults.pollutionZones,
       generated_routes: processedResults.routes,
-      mlInsights: processedResults.mlInsights,
+      mlinsights: processedResults.mlInsights, // Note: Using lowercase to match DB column name
       trends: processedResults.trends,
       correlations: processedResults.correlations,
       predictions: processedResults.predictions,

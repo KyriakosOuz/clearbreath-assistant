@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PollutionPrediction, MLInsight, Trend, Correlation } from '@/types/dataset';
 
 interface DatasetAnalyticsProps {
   datasetId: string;
@@ -27,7 +27,7 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
         .limit(1);
       
       if (error) throw error;
-      return data?.[0] || null;
+      return data?.[0] as PollutionPrediction || null;
     }
   });
 
@@ -255,9 +255,9 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
   const COLORS = ['#4caf50', '#8bc34a', '#ffeb3b', '#ff9800', '#f44336', '#880e4f'];
 
   // Get ML insights from the prediction
-  const mlInsights = prediction.mlInsights || [];
-  const trends = prediction.trends || [];
-  const correlations = prediction.correlations || [];
+  const mlInsights = prediction.mlinsights as MLInsight[] || [];
+  const trends = prediction.trends as Trend[] || [];
+  const correlations = prediction.correlations as Correlation[] || [];
   const futureData = prediction.predictions || { nextDayPrediction: 0, nextWeekTrend: 'stable', confidence: 0 };
 
   return (
@@ -447,9 +447,9 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {mlInsights && mlInsights.length > 0 ? (
+              {mlInsights && (mlInsights as MLInsight[]).length > 0 ? (
                 <div className="space-y-4">
-                  {mlInsights.map((insight, index) => (
+                  {(mlInsights as MLInsight[]).map((insight, index) => (
                     <div key={index} className="border rounded-lg p-4">
                       <div className="flex items-center mb-2">
                         <Zap className="h-5 w-5 text-primary mr-2" />
@@ -468,7 +468,7 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
             </CardContent>
           </Card>
 
-          {correlations && correlations.length > 0 && (
+          {correlations && (correlations as Correlation[]).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Factor Correlations</CardTitle>
@@ -478,7 +478,7 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {correlations.map((correlation, index) => (
+                  {(correlations as Correlation[]).map((correlation, index) => (
                     <div key={index} className="border rounded-lg p-3">
                       <div className="flex justify-between items-center">
                         <h3 className="font-medium">{correlation.factor}</h3>
@@ -541,7 +541,7 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
         </TabsContent>
 
         <TabsContent value="trends" className="space-y-6">
-          {trends && trends.length > 0 && (
+          {trends && (trends as Trend[]).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Pollution Trends</CardTitle>
@@ -551,7 +551,7 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {trends.map((trend, index) => (
+                  {(trends as Trend[]).map((trend, index) => (
                     <div key={index} className="border rounded-lg p-4">
                       <div className="flex items-center mb-2">
                         {trend.changePercent > 0 ? (
@@ -592,23 +592,23 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
                     <h3 className="font-medium mb-3">Next Day Prediction</h3>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Predicted value:</span>
-                      <span className="font-medium">{futureData.nextDayPrediction.toFixed(2)}</span>
+                      <span className="font-medium">{(futureData as any).nextDayPrediction.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-muted-foreground">Confidence:</span>
-                      <span className="font-medium">{(futureData.confidence * 100).toFixed(0)}%</span>
+                      <span className="font-medium">{((futureData as any).confidence * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                   
                   <div className="border rounded-lg p-4">
                     <h3 className="font-medium mb-3">Next Week Trend</h3>
                     <div className="flex items-center justify-center">
-                      {futureData.nextWeekTrend === 'increasing' ? (
+                      {(futureData as any).nextWeekTrend === 'increasing' ? (
                         <>
                           <TrendingUp className="h-8 w-8 text-red-500 mr-2" />
                           <span className="text-lg font-medium text-red-500">Increasing</span>
                         </>
-                      ) : futureData.nextWeekTrend === 'decreasing' ? (
+                      ) : (futureData as any).nextWeekTrend === 'decreasing' ? (
                         <>
                           <TrendingDown className="h-8 w-8 text-green-500 mr-2" />
                           <span className="text-lg font-medium text-green-500">Decreasing</span>
@@ -665,3 +665,4 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
     </div>
   );
 }
+
