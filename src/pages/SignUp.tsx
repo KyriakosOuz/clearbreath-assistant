@@ -3,8 +3,8 @@ import React from 'react';
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { FaGoogle } from 'react-icons/fa';
-import { signInWithGoogle } from '@/lib/auth';
+import { FaGoogle, FaGithub } from 'react-icons/fa';
+import { signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 
 const SignUp = () => {
   return (
@@ -25,6 +25,15 @@ const SignUp = () => {
           >
             <FaGoogle className="text-red-500" />
             <span>Sign up with Google</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2" 
+            onClick={signInWithGitHub}
+          >
+            <FaGithub className="text-black" />
+            <span>Sign up with GitHub</span>
           </Button>
           
           <div className="relative my-4">

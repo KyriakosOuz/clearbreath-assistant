@@ -30,6 +30,33 @@ export const signInWithGoogle = async (): Promise<void> => {
 };
 
 /**
+ * Handles sign in with GitHub OAuth
+ * Redirects the user to GitHub's authentication page
+ */
+export const signInWithGitHub = async (): Promise<void> => {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    
+    if (error) {
+      console.error("Error signing in with GitHub:", error);
+      toast.error("Failed to sign in with GitHub", {
+        description: error.message,
+      });
+    }
+  } catch (error) {
+    console.error("Unexpected error during GitHub sign in:", error);
+    toast.error("An unexpected error occurred", {
+      description: "Please try again later",
+    });
+  }
+};
+
+/**
  * Handles sign out
  * Redirects the user to the sign-in page after sign out
  */

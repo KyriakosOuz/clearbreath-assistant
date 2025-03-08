@@ -4,8 +4,8 @@ import { SignIn as ClerkSignIn } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { FaGoogle } from 'react-icons/fa';
-import { signInWithGoogle } from '@/lib/auth';
+import { FaGoogle, FaGithub } from 'react-icons/fa';
+import { signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -28,6 +28,15 @@ const SignIn = () => {
           >
             <FaGoogle className="text-red-500" />
             <span>Sign in with Google</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2" 
+            onClick={signInWithGitHub}
+          >
+            <FaGithub className="text-black" />
+            <span>Sign in with GitHub</span>
           </Button>
           
           <div className="relative my-4">
