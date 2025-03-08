@@ -34,6 +34,7 @@ export const uploadDatasetFile = async (
     const fileName = `${uuidv4()}.${fileExtension}`;
     
     console.log(`Uploading file to storage: ${fileName}`);
+    console.log(`User ID for dataset: ${userId}`);
     
     try {
       // Upload file to storage
@@ -56,7 +57,7 @@ export const uploadDatasetFile = async (
     }
 
     try {
-      // Create dataset record in database
+      // Create dataset record in database - explicitly set user_id to the current user's ID
       const { data: datasetData, error: datasetError } = await supabase
         .from('air_quality_datasets')
         .insert({

@@ -30,8 +30,9 @@ export const useDatasetUpload = () => {
       setUploadProgress(20);
       
       console.log(`Starting upload for file: ${file.name} (${file.size} bytes)`);
+      console.log(`User is signed in: ${isSignedIn}, User ID: ${user.id}`);
 
-      // Upload file and create dataset record
+      // Upload file and create dataset record with explicit user ID
       const dataset = await uploadDatasetFile(file, user.id);
       
       console.log(`File uploaded successfully, dataset ID: ${dataset.id}`);
