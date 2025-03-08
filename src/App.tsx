@@ -16,6 +16,7 @@ import CleanRoute from '@/pages/CleanRoute';
 import SignIn from '@/pages/SignIn';
 import SignUp from '@/pages/SignUp';
 import { useSidebar } from '@/hooks/use-sidebar';
+import Datasets from '@/pages/Datasets';
 
 // Set the Clerk publishable key
 const clerkPubKey = "pk_test_ZmVhc2libGUtbWFybW90LTg4LmNsZXJrLmFjY291bnRzLmRldiQ";
@@ -40,6 +41,7 @@ const AppContent = () => {
           <Route path="/map" element={<Map />} />
           <Route path="/clean-route" element={<CleanRoute />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/datasets" element={<Datasets />} />
           <Route path="/sign-in/*" element={<SignIn />} />
           <Route path="/sign-up/*" element={<SignUp />} />
           <Route path="*" element={<NotFound />} />

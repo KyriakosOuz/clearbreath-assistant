@@ -44,6 +44,51 @@ export type Database = {
           },
         ]
       }
+      air_quality_datasets: {
+        Row: {
+          column_names: Json | null
+          created_at: string
+          data_preview: Json | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          original_file_name: string
+          row_count: number | null
+          status: string
+          upload_date: string
+          user_id: string
+        }
+        Insert: {
+          column_names?: Json | null
+          created_at?: string
+          data_preview?: Json | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          original_file_name: string
+          row_count?: number | null
+          status?: string
+          upload_date?: string
+          user_id: string
+        }
+        Update: {
+          column_names?: Json | null
+          created_at?: string
+          data_preview?: Json | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          original_file_name?: string
+          row_count?: number | null
+          status?: string
+          upload_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       health_data: {
         Row: {
           date: string
@@ -81,6 +126,41 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pollution_predictions: {
+        Row: {
+          created_at: string
+          dataset_id: string
+          generated_routes: Json | null
+          id: string
+          predicted_pollution_zones: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_id: string
+          generated_routes?: Json | null
+          id?: string
+          predicted_pollution_zones?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          dataset_id?: string
+          generated_routes?: Json | null
+          id?: string
+          predicted_pollution_zones?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pollution_predictions_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "air_quality_datasets"
             referencedColumns: ["id"]
           },
         ]

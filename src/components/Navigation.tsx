@@ -14,7 +14,8 @@ import {
   MapPin as MapPinIcon,
   MessageSquare as MessageSquareIcon,
   LogOut,
-  LogIn
+  LogIn,
+  Database
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -87,6 +88,11 @@ const Navigation = () => {
       name: "Clean Route",
       path: "/clean-route",
       icon: NavigationIcon,
+    },
+    {
+      name: "Datasets",
+      path: "/datasets",
+      icon: Database,
     },
     {
       name: "Chat",
