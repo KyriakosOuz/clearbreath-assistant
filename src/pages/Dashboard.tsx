@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuthProtect } from '@/hooks/use-auth-protect';
 import { motion } from 'framer-motion';
@@ -87,8 +86,7 @@ const Dashboard = () => {
               variant="outline"
               onClick={() => {
                 refetchDatasets();
-                toast({
-                  title: "Datasets Refreshed",
+                toast.success("Datasets Refreshed", {
                   description: "Your dataset list has been updated",
                 });
               }}
