@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuthProtect } from '@/hooks/use-auth-protect';
 import { motion } from 'framer-motion';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useDatasets } from '@/hooks/use-datasets';
 import { DatasetCard } from '@/components/DatasetCard';
-import { DatasetViewer } from '@/components/DatasetViewer';
+import { DatasetViewer } from '@/components/dataset-viewer/DatasetViewer';
 import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
