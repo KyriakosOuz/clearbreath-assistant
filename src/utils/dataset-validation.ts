@@ -25,7 +25,19 @@ export const validateFileSize = (file: File): boolean => {
   return true;
 };
 
+// Make sure file is not empty
+export const validateFileNotEmpty = (file: File): boolean => {
+  if (file.size === 0) {
+    toast.error('File cannot be empty');
+    return false;
+  }
+  
+  return true;
+};
+
 // Combined validation
 export const validateDatasetFile = (file: File): boolean => {
-  return validateFileType(file) && validateFileSize(file);
+  return validateFileType(file) && 
+         validateFileSize(file) && 
+         validateFileNotEmpty(file);
 };

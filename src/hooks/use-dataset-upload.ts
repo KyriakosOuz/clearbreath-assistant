@@ -23,6 +23,7 @@ export const useDatasetUpload = () => {
 
       // Validate file
       if (!validateDatasetFile(file)) {
+        setIsUploading(false);
         return null;
       }
 
@@ -42,7 +43,22 @@ export const useDatasetUpload = () => {
       return dataset;
     } catch (error) {
       console.error('Unexpected error during dataset upload:', error);
-      toast.error('Unexpected error during dataset upload');
+      
+      // Provide more descriptive error messages
+      if (error instanceof Error) {
+        if (error.message.includes('storage')) {
+          toast.error('Error uploading file to storage. Please try again.');
+        } else if (error.message.includes('database')) {
+          toast.error('Error saving dataset information. Please try again.');
+        } else if (error.message.includes('processing')) {
+          toast.error('Dataset uploaded but processing failed. You can try reprocessing it later.');
+        } else {
+          toast.error(`Upload error: ${error.message}`);
+        }
+      } else {
+        toast.error('Unexpected error during dataset upload');
+      }
+      
       return null;
     } finally {
       setIsUploading(false);

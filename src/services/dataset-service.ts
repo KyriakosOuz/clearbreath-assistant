@@ -23,52 +23,62 @@ export const uploadDatasetFile = async (
   file: File, 
   userId: string
 ): Promise<AirQualityDataset> => {
-  // Generate a unique filename
-  const fileExtension = file.name.split('.').pop()?.toLowerCase();
-  const fileName = `${uuidv4()}.${fileExtension}`;
-  
-  // Upload file to storage
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('datasets')
-    .upload(fileName, file);
+  try {
+    // Generate a unique filename
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    
+    // Upload file to storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('datasets')
+      .upload(fileName, file);
 
-  if (uploadError) {
-    console.error('Error uploading file:', uploadError);
-    throw uploadError;
+    if (uploadError) {
+      console.error('Error uploading file to storage:', uploadError);
+      throw new Error(`File upload failed: ${uploadError.message}`);
+    }
+
+    // Create dataset record in database
+    const { data: datasetData, error: datasetError } = await supabase
+      .from('air_quality_datasets')
+      .insert({
+        user_id: userId,
+        file_name: fileName,
+        original_file_name: file.name,
+        file_type: fileExtension,
+        file_size: file.size,
+        status: 'Pending'
+      })
+      .select('*')
+      .single();
+
+    if (datasetError) {
+      console.error('Error creating dataset record:', datasetError);
+      // Cleanup the uploaded file if the database record failed
+      await supabase.storage.from('datasets').remove([fileName]);
+      throw new Error(`Database record creation failed: ${datasetError.message}`);
+    }
+
+    return datasetData as AirQualityDataset;
+  } catch (error) {
+    console.error('Unexpected error during dataset upload:', error);
+    throw error; // Re-throw to be handled by the caller
   }
-
-  // Create dataset record in database
-  const { data: datasetData, error: datasetError } = await supabase
-    .from('air_quality_datasets')
-    .insert({
-      user_id: userId,
-      file_name: fileName,
-      original_file_name: file.name,
-      file_type: fileExtension,
-      file_size: file.size,
-      status: 'Pending'
-    })
-    .select('*')
-    .single();
-
-  if (datasetError) {
-    console.error('Error creating dataset record:', datasetError);
-    // Cleanup the uploaded file if the database record failed
-    await supabase.storage.from('datasets').remove([fileName]);
-    throw datasetError;
-  }
-
-  return datasetData as AirQualityDataset;
 };
 
 // Trigger processing of a dataset
 export const processDataset = async (datasetId: string): Promise<void> => {
-  const { error } = await supabase.functions.invoke('process-dataset', {
-    body: { datasetId }
-  });
+  try {
+    const { error } = await supabase.functions.invoke('process-dataset', {
+      body: { datasetId }
+    });
 
-  if (error) {
-    console.error('Error processing dataset:', error);
+    if (error) {
+      console.error('Error processing dataset:', error);
+      throw new Error(`Dataset processing failed: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error in processDataset:', error);
     throw error;
   }
 };
