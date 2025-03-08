@@ -7,6 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Simple in-memory cache using a Map
+interface CacheEntry {
+  timestamp: number;
+  data: any;
+}
+
+// Cache with 10-minute expiration
+const CACHE_EXPIRATION_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+const responseCache = new Map<string, CacheEntry>();
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -30,13 +40,30 @@ serve(async (req) => {
       lon = requestData.lon;
     }
     
+    // Generate a cache key based on coordinates
+    const cacheKey = `${lat}-${lon}`;
+    
+    // Check if we have a valid cached response
+    const cachedResponse = responseCache.get(cacheKey);
+    const now = Date.now();
+    
+    if (cachedResponse && (now - cachedResponse.timestamp) < CACHE_EXPIRATION_MS) {
+      console.log(`Returning cached IQAir data for coordinates: ${lat}, ${lon} (age: ${(now - cachedResponse.timestamp) / 1000}s)`);
+      return new Response(
+        JSON.stringify(cachedResponse.data),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // If no cache hit, proceed with API call
     const iqairApiKey = Deno.env.get('IQAIR_API_KEY');
     
     if (!iqairApiKey) {
       console.error('Missing IQAir API key');
       // Return fallback data instead of an error
+      const fallbackData = generateFallbackData(lat, lon);
       return new Response(
-        JSON.stringify(generateFallbackData(lat, lon)),
+        JSON.stringify(fallbackData),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -53,9 +80,21 @@ serve(async (req) => {
       
       // Handle rate limiting specifically
       if (response.status === 429) {
-        console.warn('IQAir API rate limit reached, returning fallback data');
+        console.warn('IQAir API rate limit reached, returning cached or fallback data');
+        
+        // Try to use stale cache if available before falling back
+        if (cachedResponse) {
+          console.log(`Using stale cache for coordinates: ${lat}, ${lon} (age: ${(now - cachedResponse.timestamp) / 1000}s)`);
+          return new Response(
+            JSON.stringify(cachedResponse.data),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // No cache available, return fallback
+        const fallbackData = generateFallbackData(lat, lon);
         return new Response(
-          JSON.stringify(generateFallbackData(lat, lon)),
+          JSON.stringify(fallbackData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -67,8 +106,19 @@ serve(async (req) => {
     
     if (rawData.status !== 'success') {
       console.error(`IQAir API error: ${JSON.stringify(rawData)}`);
+      
+      // Try to use stale cache if available before falling back
+      if (cachedResponse) {
+        console.log(`Using stale cache for coordinates: ${lat}, ${lon} due to API error`);
+        return new Response(
+          JSON.stringify(cachedResponse.data),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const fallbackData = generateFallbackData(lat, lon);
       return new Response(
-        JSON.stringify(generateFallbackData(lat, lon)),
+        JSON.stringify(fallbackData),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -101,7 +151,13 @@ serve(async (req) => {
       }
     };
     
-    console.log('Successfully fetched IQAir air quality data');
+    // Store the response in cache
+    responseCache.set(cacheKey, {
+      timestamp: now,
+      data: processedData
+    });
+    
+    console.log('Successfully fetched and cached IQAir air quality data');
     
     return new Response(
       JSON.stringify(processedData),
@@ -110,9 +166,24 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error fetching IQAir air quality data:', error);
     
-    // Return fallback data instead of an error
+    // Try to get coordinates from error or use defaults
+    const lat = error.lat || '40.6403';
+    const lon = error.lon || '22.9439';
+    const cacheKey = `${lat}-${lon}`;
+    
+    // Try to use cache if available before falling back
+    const cachedResponse = responseCache.get(cacheKey);
+    if (cachedResponse) {
+      console.log('Using cached data due to error in API call');
+      return new Response(
+        JSON.stringify(cachedResponse.data),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Return fallback data as last resort
     return new Response(
-      JSON.stringify(generateFallbackData(parseFloat(error.lat || '40.6403'), parseFloat(error.lon || '22.9439'))),
+      JSON.stringify(generateFallbackData(lat, lon)),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
