@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -48,11 +47,10 @@ const Navigation = () => {
     setIsSettingsOpen((prev) => !prev);
   };
 
-  const handleSignOut = async () => {
-    if (clerkInstance && clerkInstance.signOut) {
-      await clerkInstance.signOut();
-      navigate('/');
-    }
+  const handleSignOut = () => {
+    import('@/lib/auth').then(({ signOut }) => {
+      signOut();
+    });
   };
 
   const handleSignIn = () => {

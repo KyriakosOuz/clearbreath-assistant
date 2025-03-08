@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { FaGoogle } from 'react-icons/fa';
+import { signInWithGoogle } from '@/lib/auth';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -18,6 +19,26 @@ const SignIn = () => {
         className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"
       >
         <h1 className="text-3xl font-bold text-center mb-6">Sign In</h1>
+        
+        <div className="mb-6 space-y-2">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2" 
+            onClick={signInWithGoogle}
+          >
+            <FaGoogle className="text-red-500" />
+            <span>Sign in with Google</span>
+          </Button>
+          
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+        </div>
         
         <ClerkSignIn 
           routing="path" 
