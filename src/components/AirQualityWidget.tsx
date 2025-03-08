@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, MapPin, Clock, Info, Database } from 'lucide-react';
+import { RefreshCw, MapPin, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,33 +9,16 @@ import { useAirQuality, DataSource } from '@/hooks/use-air-quality';
 import { cn } from '@/lib/utils';
 import AQIScale from '@/components/AQIScale';
 import AirQualitySourceSelector from '@/components/AirQualitySourceSelector';
-import { Badge } from '@/components/ui/badge';
+import AirQualityDisplay from '@/components/AirQualityDisplay';
+import AirQualitySourceComparison from '@/components/AirQualitySourceComparison';
 import { LocationPreferenceModal } from './LocationPreferenceModal';
+import { getAQILevel, getAQIText } from '@/utils/air-quality-utils';
 
 interface AirQualityWidgetProps {
   latitude?: number;
   longitude?: number;
   className?: string;
 }
-
-const getAQILevel = (aqi: number) => {
-  if (aqi === 1) return 'good';
-  if (aqi === 2) return 'moderate';
-  if (aqi === 3) return 'unhealthy';
-  if (aqi === 4) return 'hazardous';
-  return 'severe';
-};
-
-const getAQIText = (level: string): string => {
-  switch (level) {
-    case 'good': return 'Good';
-    case 'moderate': return 'Moderate';
-    case 'unhealthy': return 'Unhealthy';
-    case 'hazardous': return 'Hazardous';
-    case 'severe': return 'Severe';
-    default: return 'Unknown';
-  }
-};
 
 const AirQualityWidget = ({ 
   latitude, 
@@ -161,57 +144,16 @@ const AirQualityWidget = ({
           </>
         ) : (
           <>
-            <div className="flex flex-col items-center">
-              <div
-                className={cn(
-                  'flex h-16 w-16 items-center justify-center rounded-full text-white',
-                  {
-                    'bg-aqi-good': level === 'good',
-                    'bg-aqi-moderate': level === 'moderate',
-                    'bg-aqi-unhealthy': level === 'unhealthy',
-                    'bg-aqi-hazardous': level === 'hazardous',
-                    'bg-aqi-severe': level === 'severe',
-                  }
-                )}
-              >
-                <span className="text-2xl font-bold">{aqi}</span>
-              </div>
-              <span className="mt-2 font-medium">{levelText}</span>
-              
-              {data?.source && (
-                <Badge variant="outline" className="mt-1 text-[10px]">
-                  <Database className="h-2.5 w-2.5 mr-1" />
-                  {data.source}
-                </Badge>
-              )}
-              
-              {data?.station && (
-                <span className="mt-1 text-[10px] text-muted-foreground">
-                  Station: {data.station}
-                </span>
-              )}
-            </div>
-            
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {data?.pollutants && Object.entries(data.pollutants).slice(0, 3).map(([key, value]) => (
-                <div key={key} className="rounded-lg bg-muted/20 p-2 text-center">
-                  <div className="text-xs text-muted-foreground">{key}</div>
-                  <div className="font-medium">{Math.round(value * 10) / 10}</div>
-                </div>
-              ))}
-            </div>
-            
-            {data?.dominantPollutant && (
-              <div className="mt-3 text-xs text-center">
-                <span className="text-muted-foreground">Dominant pollutant: </span>
-                <span className="font-medium">{data.dominantPollutant}</span>
-              </div>
-            )}
-            
-            <div className="mt-2 flex items-center justify-center text-xs text-muted-foreground">
-              <Clock className="mr-1 h-3 w-3" />
-              <span>Updated at {formattedTime}</span>
-            </div>
+            <AirQualityDisplay
+              aqi={aqi}
+              level={level}
+              levelText={levelText}
+              source={data?.source}
+              station={data?.station}
+              dominantPollutant={data?.dominantPollutant}
+              pollutants={data?.pollutants}
+              formattedTime={formattedTime}
+            />
             
             {!isCurrentLocationPreferred() && data?.city && (
               <Button 
@@ -224,23 +166,10 @@ const AirQualityWidget = ({
               </Button>
             )}
             
-            <div className="mt-4 pt-3 border-t border-muted">
-              <h4 className="text-xs font-medium mb-2">Source comparison</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <div className="text-xs text-muted-foreground">OpenWeather</div>
-                  <div className="font-medium text-sm">
-                    {openWeatherData ? openWeatherData.aqi : 'N/A'}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <div className="text-xs text-muted-foreground">IQAir</div>
-                  <div className="font-medium text-sm">
-                    {iqairData ? iqairData.aqi : 'N/A'}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AirQualitySourceComparison
+              openWeatherData={openWeatherData}
+              iqairData={iqairData}
+            />
           </>
         )}
       </div>
