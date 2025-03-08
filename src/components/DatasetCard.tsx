@@ -32,10 +32,11 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
     Failed: 'bg-red-500'
   };
   
-  const statusBadgeColor = {
-    Pending: 'yellow',
-    Processing: 'blue',
-    Completed: 'green',
+  // Updated to use only valid badge variants
+  const statusBadgeVariant = {
+    Pending: 'default',
+    Processing: 'secondary',
+    Completed: 'outline',
     Failed: 'destructive'
   } as const;
   
@@ -59,7 +60,7 @@ export function DatasetCard({ dataset, onView }: DatasetCardProps) {
               <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
             </div>
           </div>
-          <Badge variant={statusBadgeColor[dataset.status as keyof typeof statusBadgeColor] || 'secondary'}>
+          <Badge variant={statusBadgeVariant[dataset.status as keyof typeof statusBadgeVariant] || 'secondary'}>
             {dataset.status}
           </Badge>
         </div>
