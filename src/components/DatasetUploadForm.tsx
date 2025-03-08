@@ -1,16 +1,27 @@
+
 import { useState, useRef } from 'react';
 import { Upload, FileUp, X, RefreshCcw, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useDatasets } from '@/hooks/use-datasets';
 import { toast } from 'sonner';
-import { useUser } from '@clerk/clerk-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function DatasetUploadForm() {
-  const { isSignedIn } = useUser();
   const { uploadDataset, isUploading, uploadProgress } = useDatasets();
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  
+  // Check authentication state
+  useState(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsSignedIn(!!session);
+    };
+    
+    checkAuth();
+  });
   
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
