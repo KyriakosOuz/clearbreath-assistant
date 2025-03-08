@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuthProtect } from '@/hooks/use-auth-protect';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -6,7 +5,7 @@ import { DatasetUploadForm } from '@/components/DatasetUploadForm';
 import { DatasetList } from '@/components/DatasetList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Upload, Server, Search, FileSpreadsheet } from 'lucide-react';
-import { DatasetViewer } from '@/components/DatasetViewer';
+import { DatasetViewer } from '@/components/dataset-viewer/DatasetViewer';
 
 export default function Datasets() {
   useAuthProtect();
