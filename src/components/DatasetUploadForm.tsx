@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Upload, FileUp, X, RefreshCcw, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,24 +52,17 @@ export function DatasetUploadForm() {
   };
   
   const handleFileUpload = async (file: File) => {
-    // Validate file type
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!fileExtension || !['csv', 'json', 'xlsx'].includes(fileExtension)) {
-      toast.error('Only CSV, JSON, and XLSX files are supported');
-      return;
-    }
-    
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
-      return;
-    }
-    
-    await uploadDataset(file);
-    
-    // Reset the input
-    if (inputRef.current) {
-      inputRef.current.value = '';
+    try {
+      console.log(`File selected for upload: ${file.name} (${file.size} bytes, type: ${file.type})`);
+      await uploadDataset(file);
+    } catch (error) {
+      console.error('Error in handleFileUpload:', error);
+      toast.error('Failed to upload file. Please try again.');
+    } finally {
+      // Reset the input
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     }
   };
   
@@ -133,9 +125,9 @@ export function DatasetUploadForm() {
               <h3 className="text-center font-medium">Uploading and Processing...</h3>
               <Progress value={uploadProgress} className="h-2 w-full" />
               <p className="text-center text-sm text-muted-foreground">
-                {uploadProgress < 50 
+                {uploadProgress < 30 
                   ? 'Uploading file...' 
-                  : uploadProgress < 100 
+                  : uploadProgress < 70 
                     ? 'Processing data...' 
                     : 'Completing upload...'}
               </p>

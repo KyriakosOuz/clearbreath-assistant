@@ -35,9 +35,22 @@ export const validateFileNotEmpty = (file: File): boolean => {
   return true;
 };
 
+// Validate file name for invalid characters
+export const validateFileName = (file: File): boolean => {
+  // Check for special characters that might cause issues
+  const invalidChars = /[<>:"/\\|?*]/;
+  if (invalidChars.test(file.name)) {
+    toast.error('File name contains invalid characters');
+    return false;
+  }
+  
+  return true;
+};
+
 // Combined validation
 export const validateDatasetFile = (file: File): boolean => {
   return validateFileType(file) && 
          validateFileSize(file) && 
-         validateFileNotEmpty(file);
+         validateFileNotEmpty(file) &&
+         validateFileName(file);
 };

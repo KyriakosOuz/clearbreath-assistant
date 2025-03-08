@@ -27,15 +27,19 @@ export const useDatasetUpload = () => {
         return null;
       }
 
-      setUploadProgress(25);
+      setUploadProgress(20);
+      
+      console.log(`Starting upload for file: ${file.name} (${file.size} bytes)`);
 
       // Upload file and create dataset record
       const dataset = await uploadDatasetFile(file, user.id);
-
-      setUploadProgress(75);
+      
+      console.log(`File uploaded successfully, dataset ID: ${dataset.id}`);
+      setUploadProgress(70);
 
       // Trigger processing
       await processDataset(dataset.id);
+      console.log(`Processing started for dataset ID: ${dataset.id}`);
       
       setUploadProgress(100);
       toast.success('Dataset uploaded and processing started');
@@ -52,6 +56,10 @@ export const useDatasetUpload = () => {
           toast.error('Error saving dataset information. Please try again.');
         } else if (error.message.includes('processing')) {
           toast.error('Dataset uploaded but processing failed. You can try reprocessing it later.');
+        } else if (error.message.includes('permission')) {
+          toast.error('Permission denied. Please check your account privileges.');
+        } else if (error.message.includes('network')) {
+          toast.error('Network error. Please check your internet connection and try again.');
         } else {
           toast.error(`Upload error: ${error.message}`);
         }
