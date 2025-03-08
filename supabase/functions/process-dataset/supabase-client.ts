@@ -67,6 +67,10 @@ export async function savePrediction(supabase: any, datasetId: string, processed
       dataset_id: datasetId,
       predicted_pollution_zones: processedResults.pollutionZones,
       generated_routes: processedResults.routes,
+      mlInsights: processedResults.mlInsights,
+      trends: processedResults.trends,
+      correlations: processedResults.correlations,
+      predictions: processedResults.predictions,
       status: 'Completed'
     })
     .select()

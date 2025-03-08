@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Upload, BarChart, RefreshCw } from 'lucide-react';
+import { Upload, BarChart, RefreshCw, Brain } from 'lucide-react';
 
 export function FeaturesSection() {
   const features = [
@@ -17,10 +17,16 @@ export function FeaturesSection() {
       delay: 0.8
     },
     {
+      title: 'ML-Powered Analysis',
+      description: 'Our machine learning models analyze air quality patterns to provide deeper insights.',
+      icon: Brain,
+      delay: 0.9
+    },
+    {
       title: 'Clean Route Planning',
       description: 'Find the cleaner, shorter routes based on air quality data.',
       icon: RefreshCw,
-      delay: 0.9
+      delay: 1.0
     }
   ];
 
@@ -36,7 +42,7 @@ export function FeaturesSection() {
           Data-Driven Air Quality Analysis
         </motion.h2>
         
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
           {features.map((feature, index) => (
             <motion.div
               key={index}
