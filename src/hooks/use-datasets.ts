@@ -63,14 +63,10 @@ export const useDatasets = () => {
       const fileName = `${uuidv4()}.${fileExtension}`;
 
       // First, upload the file to Supabase Storage
+      // Using upload without onUploadProgress option, which isn't supported in the FileOptions type
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('datasets')
-        .upload(fileName, file, {
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 50);
-            setUploadProgress(percent); // We'll use 50% for upload, 50% for processing
-          }
-        });
+        .upload(fileName, file);
 
       if (uploadError) {
         console.error('Error uploading file:', uploadError);
@@ -78,7 +74,7 @@ export const useDatasets = () => {
         return null;
       }
 
-      setUploadProgress(50);
+      setUploadProgress(50); // Set progress to 50% after file upload
 
       // Then, create a record in the air_quality_datasets table
       const { data: datasetData, error: datasetError } = await supabase
