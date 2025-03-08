@@ -44,11 +44,18 @@ export const validateFileName = (file: File): boolean => {
     return false;
   }
   
+  // Check if filename is too long (Supabase has a limit)
+  if (file.name.length > 255) {
+    toast.error('File name is too long (maximum 255 characters)');
+    return false;
+  }
+  
   return true;
 };
 
 // Combined validation
 export const validateDatasetFile = (file: File): boolean => {
+  console.log(`Validating file: ${file.name} (${file.size} bytes, type: ${file.type})`);
   return validateFileType(file) && 
          validateFileSize(file) && 
          validateFileNotEmpty(file) &&

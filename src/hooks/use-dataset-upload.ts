@@ -50,8 +50,8 @@ export const useDatasetUpload = () => {
       
       // Provide more descriptive error messages
       if (error instanceof Error) {
-        if (error.message.includes('storage')) {
-          toast.error('Error uploading file to storage. Please try again.');
+        if (error.message.includes('storage') || error.message.includes('objects')) {
+          toast.error('Storage permission error. Please try again or contact support.');
         } else if (error.message.includes('database')) {
           toast.error('Error saving dataset information. Please try again.');
         } else if (error.message.includes('processing')) {

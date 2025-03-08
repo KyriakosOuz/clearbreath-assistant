@@ -36,6 +36,14 @@ export const uploadDatasetFile = async (
     console.log(`Uploading file to storage: ${fileName}`);
     
     try {
+      // Check if bucket exists
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      console.log('Available buckets:', buckets?.map(b => b.name));
+      
+      if (bucketError) {
+        console.error('Error checking buckets:', bucketError);
+      }
+      
       // Upload file to storage with retries
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('datasets')
