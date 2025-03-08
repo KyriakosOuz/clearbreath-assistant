@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PollutionPrediction, MLInsight, Trend, Correlation } from '@/types/dataset';
+import { PollutionPrediction, MLInsight, Trend, Correlation, PollutionZone, RoutePoint } from '@/types/dataset';
 
 interface DatasetAnalyticsProps {
   datasetId: string;
@@ -27,7 +27,26 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
         .limit(1);
       
       if (error) throw error;
-      return data?.[0] as PollutionPrediction || null;
+      
+      // Cast the database data to our type with appropriate type conversion
+      if (data?.[0]) {
+        const rawData = data[0];
+        const typedPrediction: PollutionPrediction = {
+          id: rawData.id,
+          dataset_id: rawData.dataset_id,
+          status: rawData.status as PollutionPrediction['status'],
+          created_at: rawData.created_at,
+          predicted_pollution_zones: rawData.predicted_pollution_zones as unknown as PollutionZone[],
+          generated_routes: rawData.generated_routes as unknown as PollutionPrediction['generated_routes'],
+          mlinsights: rawData.mlinsights as unknown as MLInsight[],
+          trends: rawData.trends as unknown as Trend[],
+          correlations: rawData.correlations as unknown as Correlation[],
+          predictions: rawData.predictions as unknown as PollutionPrediction['predictions']
+        };
+        return typedPrediction;
+      }
+      
+      return null;
     }
   });
 
@@ -225,7 +244,6 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
     );
   }
 
-  // If no air quality related columns found
   if (!airQualityAnalytics) {
     return (
       <Card>
@@ -239,7 +257,6 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
     );
   }
 
-  // No prediction data found
   if (!prediction || !prediction.predicted_pollution_zones) {
     return (
       <Card>
@@ -254,10 +271,9 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
 
   const COLORS = ['#4caf50', '#8bc34a', '#ffeb3b', '#ff9800', '#f44336', '#880e4f'];
 
-  // Get ML insights from the prediction
-  const mlInsights = prediction.mlinsights as MLInsight[] || [];
-  const trends = prediction.trends as Trend[] || [];
-  const correlations = prediction.correlations as Correlation[] || [];
+  const mlInsights = prediction.mlinsights || [];
+  const trends = prediction.trends || [];
+  const correlations = prediction.correlations || [];
   const futureData = prediction.predictions || { nextDayPrediction: 0, nextWeekTrend: 'stable', confidence: 0 };
 
   return (
@@ -384,7 +400,6 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
             </CardHeader>
             <CardContent>
               {(() => {
-                // Calculate percentage of unhealthy readings
                 const totalReadings = Object.values(airQualityAnalytics.aqiCategories).reduce((a, b) => a + b, 0);
                 const unhealthyReadings = 
                   airQualityAnalytics.aqiCategories['Unhealthy for Sensitive Groups (101-150)'] +
@@ -665,4 +680,3 @@ export function DatasetAnalytics({ datasetId, datasetContent }: DatasetAnalytics
     </div>
   );
 }
-

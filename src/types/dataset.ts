@@ -25,7 +25,7 @@ export interface PollutionPrediction {
   };
   status: 'Pending' | 'Processing' | 'Completed' | 'Failed';
   created_at: string;
-  // Updated property names to match database column names exactly
+  // Use lowercase property names to match database column names exactly
   mlinsights?: MLInsight[];
   trends?: Trend[];
   correlations?: Correlation[];
