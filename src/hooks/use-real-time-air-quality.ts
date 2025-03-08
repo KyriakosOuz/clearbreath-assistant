@@ -124,39 +124,32 @@ export const useRealTimeAirQuality = (
       console.log(`Fetching air quality data for: ${location || ''} (${lat}, ${lon})`);
       
       // Call the Supabase Edge Function
-      const { data: waqi, error: waqiError } = await supabase.functions.invoke('waqi-air-quality', {
+      const { data: iqairData, error: iqairError } = await supabase.functions.invoke('iqair-air-quality', {
         body: { lat, lon }
       });
       
-      if (waqiError) {
-        console.error('WAQI Edge Function error:', waqiError);
-        throw new Error(waqiError.message);
+      if (iqairError) {
+        console.error('IQAir Edge Function error:', iqairError);
+        throw new Error(iqairError.message);
       }
       
-      if (!waqi || !waqi.data) {
-        console.error('No air quality data returned from WAQI');
+      if (!iqairData || !iqairData.data) {
+        console.error('No air quality data returned from IQAir');
         throw new Error('No air quality data returned');
       }
       
       // Parse and format the data
       const aqiData: AirQualityData = {
-        aqi: waqi.data.aqi,
-        location: waqi.data.city?.name || location || 'Unknown Location',
-        updatedAt: formatUpdatedTime(waqi.data.time?.v || Date.now()),
-        pollutants: {
-          'PM2.5': waqi.data.iaqi?.pm25?.v,
-          'PM10': waqi.data.iaqi?.pm10?.v,
-          'O3': waqi.data.iaqi?.o3?.v,
-          'NO2': waqi.data.iaqi?.no2?.v,
-          'SO2': waqi.data.iaqi?.so2?.v,
-          'CO': waqi.data.iaqi?.co?.v
+        aqi: iqairData.data.aqi,
+        location: iqairData.data.city || location || 'Unknown Location',
+        updatedAt: formatUpdatedTime(iqairData.data.time || Date.now()),
+        pollutants: iqairData.data.pollutants || {
+          'PM2.5': 0,
+          'PM10': 0
         },
-        category: getAqiCategory(waqi.data.aqi),
-        mainPollutant: waqi.data.dominentpol,
-        attribution: waqi.data.attributions?.map((attr: any) => ({
-          name: attr.name,
-          url: attr.url
-        }))
+        category: getAqiCategory(iqairData.data.aqi),
+        mainPollutant: iqairData.data.dominantPollutant,
+        attribution: iqairData.data.attributions
       };
       
       console.log('Successfully processed air quality data:', aqiData);

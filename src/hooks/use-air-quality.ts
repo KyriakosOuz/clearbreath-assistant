@@ -37,14 +37,14 @@ export interface AirQualityLocation {
   longitude: number;
 }
 
-export type DataSource = 'openweather' | 'waqi' | 'combined';
+export type DataSource = 'openweather' | 'iqair' | 'combined';
 
 export const useAirQuality = (
   location?: { lat: number; lon: number },
   options?: { source?: DataSource; interval?: number }
 ) => {
   const [openWeatherData, setOpenWeatherData] = useState<AirQualityData | null>(null);
-  const [waqiData, setWaqiData] = useState<AirQualityData | null>(null);
+  const [iqairData, setIqairData] = useState<AirQualityData | null>(null);
   const [combinedData, setCombinedData] = useState<AirQualityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,13 +80,13 @@ export const useAirQuality = (
     }
   }, [location?.lat, location?.lon]);
 
-  // Function to fetch data from WAQI API
-  const fetchWaqiData = useCallback(async () => {
+  // Function to fetch data from IQAir API
+  const fetchIqairData = useCallback(async () => {
     try {
       const lat = location?.lat || 40.6403; // Default to Thessaloniki
       const lon = location?.lon || 22.9439;
 
-      const { data, error } = await supabase.functions.invoke('waqi-air-quality', {
+      const { data, error } = await supabase.functions.invoke('iqair-air-quality', {
         body: { lat: lat.toString(), lon: lon.toString() }
       });
 
@@ -94,39 +94,39 @@ export const useAirQuality = (
         throw new Error(error.message);
       }
 
-      setWaqiData(data.data);
+      setIqairData(data.data);
       
       return data.data;
     } catch (err) {
-      console.error('Error fetching WAQI air quality data:', err);
+      console.error('Error fetching IQAir air quality data:', err);
       return null;
     }
   }, [location?.lat, location?.lon]);
 
   // Function to combine both data sources
-  const combineData = useCallback((openWeatherData: AirQualityData | null, waqiData: AirQualityData | null) => {
-    if (!openWeatherData && !waqiData) return null;
+  const combineData = useCallback((openWeatherData: AirQualityData | null, iqairData: AirQualityData | null) => {
+    if (!openWeatherData && !iqairData) return null;
     
     // If we only have one data source, use that
-    if (!openWeatherData) return waqiData;
-    if (!waqiData) return openWeatherData;
+    if (!openWeatherData) return iqairData;
+    if (!iqairData) return openWeatherData;
     
-    // Combine data, giving preference to WAQI for AQI as it's from stations
+    // Combine data, giving preference to IQAir for AQI as it's from stations
     // And using OpenWeather for forecast and other details
     const combined: AirQualityData = {
-      aqi: waqiData.aqi, // Prefer WAQI for current AQI
-      city: waqiData.city || openWeatherData.city,
-      coordinates: waqiData.coordinates || openWeatherData.coordinates,
+      aqi: iqairData.aqi, // Prefer IQAir for current AQI
+      city: iqairData.city || openWeatherData.city,
+      coordinates: iqairData.coordinates || openWeatherData.coordinates,
       time: new Date().toISOString(), // Use current time for combined data
-      source: 'Combined (WAQI + OpenWeather)',
-      station: waqiData.station,
-      // Combine pollutants, prefer WAQI values when available
+      source: 'Combined (IQAir + OpenWeather)',
+      station: iqairData.station,
+      // Combine pollutants, prefer IQAir values when available
       pollutants: {
         ...openWeatherData.pollutants,
-        ...waqiData.pollutants
+        ...iqairData.pollutants
       },
-      dominantPollutant: waqiData.dominantPollutant,
-      attributions: waqiData.attributions,
+      dominantPollutant: iqairData.dominantPollutant,
+      attributions: iqairData.attributions,
       // Use OpenWeather for forecast as it's more reliable for predictions
       forecast: openWeatherData.forecast
     };
@@ -141,23 +141,23 @@ export const useAirQuality = (
       setError(null);
 
       // Fetch data from both sources in parallel
-      const [openWeatherResult, waqiResult] = await Promise.allSettled([
+      const [openWeatherResult, iqairResult] = await Promise.allSettled([
         fetchOpenWeatherData(),
-        fetchWaqiData()
+        fetchIqairData()
       ]);
       
       const openWeatherSuccess = openWeatherResult.status === 'fulfilled' && openWeatherResult.value;
-      const waqiSuccess = waqiResult.status === 'fulfilled' && waqiResult.value;
+      const iqairSuccess = iqairResult.status === 'fulfilled' && iqairResult.value;
       
-      if (!openWeatherSuccess && !waqiSuccess) {
+      if (!openWeatherSuccess && !iqairSuccess) {
         throw new Error('Failed to fetch air quality data from any source');
       }
       
       // Combine the data
       const owData = openWeatherSuccess ? openWeatherResult.value : null;
-      const wqData = waqiSuccess ? waqiResult.value : null;
+      const iqData = iqairSuccess ? iqairResult.value : null;
       
-      const combined = combineData(owData, wqData);
+      const combined = combineData(owData, iqData);
       setCombinedData(combined);
       
       setLastUpdated(new Date());
@@ -172,7 +172,7 @@ export const useAirQuality = (
     } finally {
       setIsLoading(false);
     }
-  }, [fetchOpenWeatherData, fetchWaqiData, combineData, toast]);
+  }, [fetchOpenWeatherData, fetchIqairData, combineData, toast]);
 
   // Fetch data initially and set up refresh interval
   useEffect(() => {
@@ -189,18 +189,18 @@ export const useAirQuality = (
     switch (source) {
       case 'openweather':
         return openWeatherData;
-      case 'waqi':
-        return waqiData;
+      case 'iqair':
+        return iqairData;
       case 'combined':
       default:
         return combinedData;
     }
-  }, [source, openWeatherData, waqiData, combinedData]);
+  }, [source, openWeatherData, iqairData, combinedData]);
 
   return {
     data: getData(),
     openWeatherData,
-    waqiData,
+    iqairData,
     isLoading,
     error,
     lastUpdated,

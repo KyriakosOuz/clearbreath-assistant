@@ -30,43 +30,69 @@ serve(async (req) => {
       lon = requestData.lon;
     }
     
-    const waqiApiKey = Deno.env.get('WAQI_API_KEY') || 'demo';
+    const iqairApiKey = Deno.env.get('IQAIR_API_KEY');
     
-    if (!waqiApiKey) {
-      console.error('Missing WAQI API key');
+    if (!iqairApiKey) {
+      console.error('Missing IQAir API key');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log(`Fetching WAQI air quality data for coordinates: ${lat}, ${lon}`);
+    console.log(`Fetching IQAir air quality data for coordinates: ${lat}, ${lon}`);
     
-    // Call WAQI API for the nearest station data
-    const apiUrl = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${waqiApiKey}`;
+    // Call IQAir API for air quality data
+    const apiUrl = `https://api.airvisual.com/v2/nearest_city?lat=${lat}&lon=${lon}&key=${iqairApiKey}`;
     
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch WAQI air quality data: ${response.status}`);
+      throw new Error(`Failed to fetch IQAir air quality data: ${response.status}`);
     }
     
     const rawData = await response.json();
     
-    // Process the WAQI data to match our application's format
+    if (rawData.status !== 'success') {
+      throw new Error(`IQAir API error: ${rawData.data}`);
+    }
+    
+    // Process the IQAir data to match our application's format
+    const data = rawData.data;
+    const aqi = data.current.pollution.aqius;
     const processedData = {
       status: 'success',
-      data: rawData.data
+      data: {
+        aqi: aqi,
+        city: `${data.city}, ${data.country}`,
+        coordinates: {
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon)
+        },
+        time: new Date().toISOString(),
+        station: data.city,
+        pollutants: {
+          'PM2.5': data.current.pollution.mainus === 'p2' ? data.current.pollution.aqius : 0,
+          'PM10': data.current.pollution.mainus === 'p1' ? data.current.pollution.aqius : 0
+        },
+        dominantPollutant: data.current.pollution.mainus === 'p2' ? 'PM2.5' : 'PM10',
+        attributions: [
+          {
+            name: "IQAir",
+            url: "https://www.iqair.com/"
+          }
+        ]
+      }
     };
     
-    console.log('Successfully fetched WAQI air quality data');
+    console.log('Successfully fetched IQAir air quality data');
     
     return new Response(
       JSON.stringify(processedData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching WAQI air quality data:', error);
+    console.error('Error fetching IQAir air quality data:', error);
     
     return new Response(
       JSON.stringify({ error: error.message }),

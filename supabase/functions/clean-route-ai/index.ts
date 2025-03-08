@@ -1,8 +1,4 @@
 
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0';
 
@@ -42,27 +38,27 @@ interface PollutionPoint {
   };
 }
 
-// Function to fetch WAQI air quality data
+// Function to fetch IQAir air quality data
 async function fetchAirQualityData(lat: number, lon: number) {
   try {
-    const waqi_token = Deno.env.get('WAQI_API');
+    const iqair_key = Deno.env.get('IQAIR_API_KEY');
     const response = await fetch(
-      `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${waqi_token}`
+      `https://api.airvisual.com/v2/nearest_city?lat=${lat}&lon=${lon}&key=${iqair_key}`
     );
     
     if (!response.ok) {
-      throw new Error(`WAQI API error: ${response.statusText}`);
+      throw new Error(`IQAir API error: ${response.statusText}`);
     }
     
     const data = await response.json();
     
-    if (data.status !== 'ok') {
-      throw new Error(`WAQI error: ${data.data}`);
+    if (data.status !== 'success') {
+      throw new Error(`IQAir error: ${data.data}`);
     }
     
     return {
-      aqi: data.data.aqi,
-      station: data.data.city.name
+      aqi: data.data.current.pollution.aqius,
+      station: data.data.city
     };
   } catch (error) {
     console.error("Error fetching air quality data:", error);

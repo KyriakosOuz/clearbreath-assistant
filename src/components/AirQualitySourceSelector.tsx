@@ -30,8 +30,8 @@ const AirQualitySourceSelector = ({
         <ToggleGroupItem value="openweather" className="text-xs px-2 py-1 h-7">
           OpenWeather
         </ToggleGroupItem>
-        <ToggleGroupItem value="waqi" className="text-xs px-2 py-1 h-7">
-          WAQI
+        <ToggleGroupItem value="iqair" className="text-xs px-2 py-1 h-7">
+          IQAir
         </ToggleGroupItem>
       </ToggleGroup>
       
@@ -45,13 +45,13 @@ const AirQualitySourceSelector = ({
           <div className="space-y-2 text-sm">
             <h4 className="font-medium">About Data Sources</h4>
             <p className="text-muted-foreground text-xs">
-              <strong>Combined:</strong> Blends data from both sources, using WAQI's station measurements for current AQI and OpenWeather for forecasts.
+              <strong>Combined:</strong> Blends data from both sources, using IQAir's station measurements for current AQI and OpenWeather for forecasts.
             </p>
             <p className="text-muted-foreground text-xs">
               <strong>OpenWeather:</strong> Uses OpenWeather's air pollution API, which provides modeled data based on satellite observations and weather patterns.
             </p>
             <p className="text-muted-foreground text-xs">
-              <strong>WAQI:</strong> Uses the World Air Quality Index Project data from physical monitoring stations, providing more localized measurements.
+              <strong>IQAir:</strong> Uses the IQAir API from physical monitoring stations, providing more localized measurements.
             </p>
           </div>
         </PopoverContent>

@@ -48,7 +48,7 @@ const AirQualityWidget = ({
   const { 
     data, 
     openWeatherData, 
-    waqiData,
+    iqairData,
     isLoading, 
     lastUpdated, 
     refetch 
@@ -234,9 +234,9 @@ const AirQualityWidget = ({
                   </div>
                 </div>
                 <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <div className="text-xs text-muted-foreground">WAQI</div>
+                  <div className="text-xs text-muted-foreground">IQAir</div>
                   <div className="font-medium text-sm">
-                    {waqiData ? waqiData.aqi : 'N/A'}
+                    {iqairData ? iqairData.aqi : 'N/A'}
                   </div>
                 </div>
               </div>
