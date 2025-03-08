@@ -1,26 +1,28 @@
 
 -- Create a storage bucket for dataset files
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('datasets', 'datasets', false)
-ON CONFLICT (id) DO NOTHING;
+insert into storage.buckets (id, name, public)
+values ('datasets', 'datasets', true);
 
--- Set up security policies for the datasets bucket
-CREATE POLICY "Authenticated users can view datasets"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'datasets')
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- Set up storage policy to allow authenticated users to upload to this bucket
+create policy "Allow authenticated users to upload files"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'datasets');
 
-CREATE POLICY "Authenticated users can upload datasets"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'datasets')
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- Allow authenticated users to select their own objects
+create policy "Allow authenticated users to select their own objects"
+on storage.objects for select
+to authenticated
+using (bucket_id = 'datasets');
 
-CREATE POLICY "Authenticated users can update datasets"
-ON storage.objects FOR UPDATE
-USING (bucket_id = 'datasets')
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- Allow authenticated users to update their own objects
+create policy "Allow authenticated users to update their own objects"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'datasets');
 
-CREATE POLICY "Authenticated users can delete datasets"
-ON storage.objects FOR DELETE
-USING (bucket_id = 'datasets')
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- Allow authenticated users to delete their own objects
+create policy "Allow authenticated users to delete their own objects"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'datasets');
