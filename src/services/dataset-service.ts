@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { AirQualityDataset } from '@/types/dataset';
 import { v4 as uuidv4 } from 'uuid';
@@ -57,11 +56,9 @@ export const uploadDatasetFile = async (
     }
 
     try {
-      // Create dataset record bypassing RLS
-      // Using anonymous insert with explicit user_id set
+      // Create dataset record with proper auth
       console.log('Creating database record with user_id:', userId);
       
-      // Use service role client to bypass RLS if needed
       const { data: datasetData, error: datasetError } = await supabase
         .from('air_quality_datasets')
         .insert({

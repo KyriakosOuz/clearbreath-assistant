@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Home, 
@@ -15,40 +15,41 @@ import { useSidebar } from '@/hooks/use-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from '@/components/ui/button';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import { supabase } from '@/integrations/supabase/client';
+import { signOut } from '@/lib/auth';
 
 const Navigation = () => {
   const { collapsed, onExpand, onCollapse } = useSidebar((state) => state);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   
-  // Safely attempt to use Clerk's hooks
-  let user = null;
-  let isLoaded = false;
-  let clerkInstance = null;
-  
-  try {
-    const userResult = useUser();
-    user = userResult.user;
-    isLoaded = userResult.isLoaded;
-    const { signOut } = useClerk();
-    clerkInstance = { signOut };
-  } catch (error) {
-    console.log('Clerk authentication not available');
-  }
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsLoaded(true);
+    };
+    
+    fetchUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoaded(true);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const toggleSettings = () => {
     setIsSettingsOpen((prev) => !prev);
   };
 
   const handleSignOut = () => {
-    if (clerkInstance?.signOut) {
-      clerkInstance.signOut();
-    } else {
-      import('@/lib/auth').then(({ signOut }) => {
-        signOut();
-      });
-    }
+    signOut();
   };
 
   const handleSignIn = () => {
@@ -99,14 +100,14 @@ const Navigation = () => {
             <Avatar className="h-8 w-8">
               {isLoaded && user ? (
                 <>
-                  <AvatarImage src={user.imageUrl} />
-                  <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
+                  <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </>
               ) : (
                 <AvatarFallback>GU</AvatarFallback>
               )}
             </Avatar>
-            <span className="font-bold">{isLoaded && user ? user.firstName : "Guest"}</span>
+            <span className="font-bold">{isLoaded && user ? user.email?.split('@')[0] : "Guest"}</span>
             <Button variant="ghost" size="icon" onClick={onCollapse}>
               <Database className="h-5 w-5" />
             </Button>

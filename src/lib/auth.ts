@@ -81,3 +81,43 @@ export const signOut = async (): Promise<void> => {
     });
   }
 };
+
+/**
+ * Gets the current session
+ * Returns the session or null if not signed in
+ */
+export const getCurrentSession = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("Error getting session:", error);
+      return null;
+    }
+    
+    return session;
+  } catch (error) {
+    console.error("Unexpected error getting session:", error);
+    return null;
+  }
+};
+
+/**
+ * Gets the current user
+ * Returns the user or null if not signed in
+ */
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.error("Error getting user:", error);
+      return null;
+    }
+    
+    return user;
+  } catch (error) {
+    console.error("Unexpected error getting user:", error);
+    return null;
+  }
+};

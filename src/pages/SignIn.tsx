@@ -1,14 +1,54 @@
 
-import React from 'react';
-import { SignIn as ClerkSignIn } from '@clerk/clerk-react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FaGoogle, FaGithub } from 'react-icons/fa';
+import { toast } from 'sonner';
 import { signInWithGoogle, signInWithGitHub } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Error signing in:', error);
+        toast.error(error.message);
+        return;
+      }
+      
+      toast.success('Signed in successfully');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Unexpected error during sign in:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50">
@@ -25,6 +65,7 @@ const SignIn = () => {
             variant="outline" 
             className="w-full flex items-center justify-center gap-2" 
             onClick={signInWithGoogle}
+            disabled={isLoading}
           >
             <FaGoogle className="text-red-500" />
             <span>Sign in with Google</span>
@@ -34,6 +75,7 @@ const SignIn = () => {
             variant="outline" 
             className="w-full flex items-center justify-center gap-2" 
             onClick={signInWithGitHub}
+            disabled={isLoading}
           >
             <FaGithub className="text-black" />
             <span>Sign in with GitHub</span>
@@ -44,18 +86,68 @@ const SignIn = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
             </div>
           </div>
         </div>
         
-        <ClerkSignIn 
-          routing="path" 
-          path="/sign-in" 
-          signUpUrl="/sign-up" 
-          afterSignInUrl="/dashboard"
-          redirectUrl="/dashboard"
-        />
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="Your email address" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input 
+              id="password" 
+              type="password" 
+              placeholder="Your password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox 
+              id="keepSignedIn" 
+              checked={keepSignedIn} 
+              onCheckedChange={(checked) => setKeepSignedIn(checked === true)}
+            />
+            <Label 
+              htmlFor="keepSignedIn" 
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              Keep me signed in
+            </Label>
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </Button>
+          
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Don't have an account?{' '}
+            <button 
+              type="button"
+              onClick={() => navigate('/sign-up')}
+              className="text-primary font-medium hover:underline"
+              disabled={isLoading}
+            >
+              Sign Up
+            </button>
+          </div>
+        </form>
       </motion.div>
     </div>
   );

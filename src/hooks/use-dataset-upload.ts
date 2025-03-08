@@ -1,18 +1,20 @@
 
 import { useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
 import { toast } from 'sonner';
 import { uploadDatasetFile, processDataset } from '@/services/dataset-service';
 import { validateDatasetFile } from '@/utils/dataset-validation';
 import { AirQualityDataset } from '@/types/dataset';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useDatasetUpload = () => {
-  const { user, isSignedIn } = useUser();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const uploadDataset = async (file: File): Promise<AirQualityDataset | null> => {
-    if (!isSignedIn || !user) {
+    // Check if user is signed in
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
       toast.error('You must be signed in to upload datasets');
       return null;
     }
@@ -31,10 +33,10 @@ export const useDatasetUpload = () => {
       
       // Log detailed information for debugging
       console.log(`Starting upload for file: ${file.name} (${file.size} bytes)`);
-      console.log(`User is signed in: ${isSignedIn}, User ID: ${user.id}`);
+      console.log(`User is signed in: ${!!session}, User ID: ${session.user.id}`);
 
       // Upload file and create dataset record with explicit user ID
-      const dataset = await uploadDatasetFile(file, user.id);
+      const dataset = await uploadDatasetFile(file, session.user.id);
       
       console.log(`File uploaded successfully, dataset ID: ${dataset.id}`);
       setUploadProgress(70);

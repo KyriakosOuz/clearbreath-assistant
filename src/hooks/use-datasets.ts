@@ -1,15 +1,36 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useUser } from '@clerk/clerk-react';
 import { fetchDatasets, deleteDataset, processDataset, updateDatasetStatusToPending } from '@/services/dataset-service';
 import { useDatasetUpload } from '@/hooks/use-dataset-upload';
 import { AirQualityDataset } from '@/types/dataset';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 
 export const useDatasets = () => {
-  const { isSignedIn, isLoaded } = useUser();
   const queryClient = useQueryClient();
   const { uploadDataset, isUploading, uploadProgress } = useDatasetUpload();
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsSignedIn(!!session);
+      setIsLoaded(true);
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsSignedIn(!!session);
+      setIsLoaded(true);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Fetch datasets
   const {
